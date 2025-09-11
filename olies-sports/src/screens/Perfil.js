@@ -20,14 +20,13 @@ export default function PerfilScreen() {
       {/* Saudação */}
       <Text style={styles.greeting}>Olá Victor!</Text>
 
-      {/* Menu */}
       <View style={styles.menu}>
         <Text style={styles.menuItem}> Pedidos</Text>
         <Text style={styles.menuItem}> Alterar dados pessoais</Text>
         <Text style={styles.menuItem}> Endereços</Text>
       </View>
 
-      {/* Alterar email */}
+      
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Alterar email</Text>
         <TextInput
@@ -43,7 +42,7 @@ export default function PerfilScreen() {
         />
       </View>
 
-      {/* Alterar senha */}
+      
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Alterar senha</Text>
         <TextInput
@@ -61,7 +60,6 @@ export default function PerfilScreen() {
         />
       </View>
 
-      {/* Botões */}
       <TouchableOpacity style={styles.saveButton} onPress={salvarAlteracoes}>
         <Text style={styles.saveButtonText}>Salvar alterações</Text>
       </TouchableOpacity>
