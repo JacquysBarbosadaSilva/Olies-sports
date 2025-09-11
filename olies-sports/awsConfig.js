@@ -1,0 +1,12 @@
+// awsConfig.js
+const AWS = require('aws-sdk');
+
+// Configuração básica com credenciais
+AWS.config.update({
+  accessKeyId: process.env.ASIA47CR2TTEEZWVRK3N,
+  secretAccessKey: process.env.BdXqQ23hMa2cmIqp2+cDeWGQtIaidi+wOAS7QcMz,
+  awssessiontoken: process.env.IQoJb3JpZ2luX2VjEKH,//////////wEaCXVzLXdlc3QtMiJHMEUCICbDS76rW2ucs2ktIUJdvNjKstPwuk5bIUWSkl2sIfkFAiEAwkkMQK8+YDF8Q5cfj1gqhBvX9OX/idHUzOg1Hm8HMnUqrwIIGhAAGgw4OTEzNzczMjczMDQiDDKs0Vme5PRwJgOzaiqMAuk1UB5EFuj+yShvF65U1wPy+t74w06xMbwZXMmmwpqDYNgZRa8I+tE+HjIkoNptG6cFCCL9Fl1x8AjBbbfl8OypIb7rs5B4B2F2YY6n4Bp8YP6TR/6IDlqb3eK8QbeIXAhwbp3gz2pxUA0Ru6VslmVAhUfxxtsf5uwn3RGHJna6Aj3qI9DK1tqi7c0+shIIJ69l39PruqoaL6NPAMrMa3ifXKqFD5Ma/KU4TC4EX2H1Rkrpd4GsQJqUdP9Ylxdn6VNzKnY3FPTtJQMzpjLJdCtdf2Fn+2zPuGbZ5DDCHh2ESTeyDPSJ/mdAKCGVKeBihNKNSHlaTfd2NdikX9MV793e9njsf9tQRrEMcHEwlPyLxgY6nQH59Jxtx37ndnTVZYdf1Bwa/1hWWCNtaxZv8N1A25Lsc/DPa0ubkLfGzTKQ2qY/BM1KawlmwWE7sFRM37KDAf+R0BgfQkc+TjYcF5AoxH/OtFeX54E9fbXMXnO6tAZo62eg9sAVlCEMmUrLSh5LB3gHHaOv8mUHhKtyvFPJvrUvWO0UR7SOUw3RD+beI/bE0crXdT5MoflFFFhHdd3F
+  region: process.env.AWS_REGION || 'us-east-1'
+});
+
+module.exports = AWS;
