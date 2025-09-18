@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
 
 export default function PerfilScreen() {
   const [novoEmail, setNovoEmail] = useState("");
@@ -11,62 +11,78 @@ export default function PerfilScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Perfil</Text>
-        
+        <Image source={require("../assets/logotipo.png")} style={styles.logo} />
       </View>
 
-      {/* Saudação */}
-      <Text style={styles.greeting}>Olá Victor!</Text>
+      {/* Conteúdo */}
+      <View style={styles.content}>
+        <Text style={styles.greeting}>Olá Victor!</Text>
 
-      <View style={styles.menu}>
-        <Text style={styles.menuItem}> Pedidos</Text>
-        <Text style={styles.menuItem}> Alterar dados pessoais</Text>
-        <Text style={styles.menuItem}> Endereços</Text>
+        {/* Menu */}
+        <View style={styles.menu}>
+          <View style={styles.menuItem}>
+            <Image source={require("../assets/emoji-casa.png")} style={styles.menuIcon} />
+            <Text style={styles.menuText}>Pedidos</Text>
+          </View>
+
+          <View style={styles.menuItem}>
+            <Image source={require("../assets/emoji-casa.png")} style={styles.menuIcon} />
+            <Text style={styles.menuText}>Alterar dados pessoais</Text>
+          </View>
+
+          <View style={styles.menuItem}>
+            <Image source={require("../assets/emoji-casa.png")} style={styles.menuIcon} />
+            <Text style={styles.menuText}>Endereços</Text>
+          </View>
+        </View>
+
+        {/* Alterar email */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Alterar email</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: "#f2f2f2" }]}
+            value="victorkoba08@gmail.com"
+            editable={false}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Novo email"
+            value={novoEmail}
+            onChangeText={setNovoEmail}
+          />
+        </View>
+
+        {/* Alterar senha */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Alterar senha</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: "#f2f2f2" }]}
+            secureTextEntry
+            value="********"
+            editable={false}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Nova senha"
+            secureTextEntry
+            value={novaSenha}
+            onChangeText={setNovaSenha}
+          />
+        </View>
+
+        {/* Botões */}
+        <TouchableOpacity style={styles.saveButton} onPress={salvarAlteracoes}>
+          <Text style={styles.saveButtonText}>Salvar alterações</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.exitButton}>
+          <Text style={styles.exitButtonText}>Sair</Text>
+        </TouchableOpacity>
       </View>
-
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Alterar email</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: "#f2f2f2" }]}
-          value="victorkoba08@gmail.com"
-          editable={false}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Novo email"
-          value={novoEmail}
-          onChangeText={setNovoEmail}
-        />
-      </View>
-
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Alterar senha</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: "#f2f2f2" }]}
-          secureTextEntry
-          value="********"
-          editable={false}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Nova senha"
-          secureTextEntry
-          value={novaSenha}
-          onChangeText={setNovaSenha}
-        />
-      </View>
-
-      <TouchableOpacity style={styles.saveButton} onPress={salvarAlteracoes}>
-        <Text style={styles.saveButtonText}>Salvar alterações</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.exitButton}>
-        <Text style={styles.exitButtonText}>Sair</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -74,28 +90,33 @@ export default function PerfilScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F3ECE2", 
-    padding: 20,
+    backgroundColor: "#F3ECE2",
   },
   scrollContent: {
     paddingBottom: 40,
   },
   header: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 15,
-  paddingBottom: 10, 
-},
-
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#F3ECE2",
+    padding: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
   title: {
     fontSize: 22,
     fontWeight: "bold",
   },
   logo: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#001f3f",
+    width: 70,
+    height: 60,
+    resizeMode: "contain",
+  },
+  content: {
+    padding: 20,
   },
   greeting: {
     fontSize: 18,
@@ -106,8 +127,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   menuItem: {
+    flexDirection: "row", 
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  menuIcon: {
+    width: 40,
+    height: 30,
+    marginRight: 10,
+    resizeMode: "contain",
+  },
+  menuText: {
     fontSize: 16,
-    marginBottom: 12,
   },
   section: {
     marginBottom: 20,
@@ -128,11 +159,11 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: "#001f3f",
-    padding: 14,
+    padding: 10,
     borderRadius: 6,
     alignItems: "center",
     marginBottom: 15,
-    marginTop:30,
+    marginTop: 10,
   },
   saveButtonText: {
     color: "#fff",
@@ -140,16 +171,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   exitButton: {
-  backgroundColor: "#fff",
-  borderWidth: 1,
-  borderColor: "#ccc",
-  padding: 10,
-  borderRadius: 6,
-  alignItems: "center",
-  width: 150, 
-  alignSelf: "center", 
-  marginTop: 40,
-},
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    borderRadius: 6,
+    alignItems: "center",
+    width: 150,
+    alignSelf: "center",
+    marginTop: 20,
+  },
   exitButtonText: {
     fontSize: 16,
     color: "#333",
