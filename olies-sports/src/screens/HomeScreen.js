@@ -78,8 +78,10 @@ export default function HomeScreen() {
 
             <View>
                 <View style={styles.cards}>
-                    <View styles={[styles.promoValor]}>
-                        <Text style={[styles.fontKantumruySemiBold, styles.promocao]}>-5% OFF</Text>
+                    <View style={[styles.desconto]}>
+                        <View style={[styles.promoValor]}>
+                            <Text style={[styles.fontKantumruySemiBold, styles.promocao]}>-5% OFF</Text>
+                        </View>
                     </View>
                     <Image source={require("../assets/logotipo.png")} style={styles.image} resizeMode="contain" />
                     <View>
@@ -185,7 +187,8 @@ const styles = StyleSheet.create({
     cards:{
         backgroundColor: "white",
         height: 242,
-        width: 167,
+        width: 165,
+        padding: 2,
         marginBottom: 50,
         alignItems:"center",
     },
@@ -194,18 +197,21 @@ const styles = StyleSheet.create({
         backgroundColor: "#052242",
         color: "white",
         textAlign: "center",
-        alignItems:"center",
         width: 68,
-        height: 22,
+        padding: 1,
         fontSize: 12,
-        borderRadius: 10,
+        borderRadius: 5,
+    },
+
+    desconto:{
+        width: "100%",
+        alignItems: "flex-start", // Alinha o conteúdo à esquerda
+        paddingLeft: 10,
+        paddingTop: 10,
     },
 
     promoValor:{
-        display:"flex",
-        justifyContent:"center",
-        textAlign: "center",
-        alignItems: "center",
+        width: "100%",
     },
 
     nomeProduto:{
