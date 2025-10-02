@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TextInput, Image } from "react-native";
+import { View, Text, StyleSheet, TextInput, Image, ScrollView } from "react-native";
 import { useFonts } from 'expo-font';
 
 import { useState } from "react";
@@ -16,7 +16,7 @@ export default function HomeScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={{ alignItems: 'center' }} style={styles.container}>
             <View style={styles.searchContainer}>
                 <TextInput
                     style={[styles.input, styles.fontKantumruy]}
@@ -75,14 +75,25 @@ export default function HomeScreen() {
                     <Text style={[styles.verTodos, styles.fontKantumruySemiBold]}>Ver todos</Text>
                 </View>
             </View>
-        </View>
+
+            <View>
+                <View style={styles.cards}>
+                    <View styles={[styles.promoValor]}>
+                        <Text style={[styles.fontKantumruySemiBold, styles.promocao]}>-5% OFF</Text>
+                    </View>
+                    <Image source={require("../assets/logotipo.png")} style={styles.image} resizeMode="contain" />
+                    <View>
+                        <Text style={[styles.fontKantumruySemiBold, styles.nomeProduto]}>Tênis Nike Air Jordan 1 Low SE</Text>
+                    </View>
+                </View>
+            </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        alignItems: "center",
         width: "100%",
         backgroundColor: "#F3ECE2",
     }, // Estilo base para a fonte Kantumruy Pro
@@ -169,5 +180,36 @@ const styles = StyleSheet.create({
     verTodos: {
         fontSize: 14,
         color: "#052242",
+    },
+
+    cards:{
+        backgroundColor: "white",
+        height: 242,
+        width: 167,
+        marginBottom: 50,
+        alignItems:"center",
+    },
+
+    promocao:{
+        backgroundColor: "#052242",
+        color: "white",
+        textAlign: "center",
+        alignItems:"center",
+        width: 68,
+        height: 22,
+        fontSize: 12,
+        borderRadius: 10,
+    },
+
+    promoValor:{
+        display:"flex",
+        justifyContent:"center",
+        textAlign: "center",
+        alignItems: "center",
+    },
+
+    nomeProduto:{
+        color: "#9D9D9D",
+        textAlign:"center",
     },
 });
