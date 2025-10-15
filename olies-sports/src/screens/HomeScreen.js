@@ -59,7 +59,7 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.categoryButton}>
                     <View style={styles.categoryCircle}>
-                        <Image source={require("../assets/feminino.jpg")} style={styles.categoryIcon} />
+                        <Image source={require("../assets/feminino-ico.jpg")} style={styles.categoryIcon} />
                     </View>
                     <Text style={[styles.categoryText, styles.fontKantumruy]}>Feminino</Text>
                 </View>
