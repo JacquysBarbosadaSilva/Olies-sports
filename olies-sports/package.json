@@ -28,7 +28,8 @@
     "react-native-screens": "~4.16.0",
     "react-native-vector-icons": "^10.3.0",
     "react-native-web": "^0.21.0",
-    "styled-components": "^6.1.19"
+    "styled-components": "^6.1.19",
+    "yet": "^0.1.0"
   },
   "private": true
 }

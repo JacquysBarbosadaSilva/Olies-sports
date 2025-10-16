@@ -9,6 +9,8 @@ import Perfil from "../screens/Perfil";
 import Categorias from "../screens/Categorias";
 import Produtos from "../screens/Produtos";
 import InfoProduto from "../screens/InfoProduto";
+import SplashScreen from "../screens/SplashScreen"; 
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -48,6 +50,7 @@ function AppNavigation() {
     return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
+               <Stack.Screen name="Splash" component={SplashScreen} />
                 <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
                 <Stack.Screen
                     name="Produtos"
