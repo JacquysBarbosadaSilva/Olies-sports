@@ -13,7 +13,7 @@ export default function PerfilScreen({ navigation }) {
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       {/* Cabeçalho */}
       <View style={styles.header}>
-        <Text style={styles.title}>Perfil</Text>
+        <Text style={styles.title}>Endereços</Text>
         <Image source={require("../assets/logotipo.png")} style={styles.logo} />
       </View>
 

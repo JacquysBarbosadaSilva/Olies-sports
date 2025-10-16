@@ -42,7 +42,7 @@ function TabNavigator() {
 
             <Tab.Screen name="Categorias" component={Categorias} />
 
-            <Tab.Screen name="Perfil" component={Perfil} />
+            <Tab.Screen name="Perfil" component={PerfilStackNavigator} />
 
         </Tab.Navigator>
     );
