@@ -48,11 +48,11 @@ function TabNavigator() {
     );
 }
 
-function AppNavigation() {
+function AppNavigation({navigation}) {
     return (
+
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-               <Stack.Screen name="Splash" component={SplashScreen} />
                 <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
                 <Stack.Screen
                     name="Produtos"
@@ -68,23 +68,20 @@ function AppNavigation() {
                                 onPress={() => navigation.goBack()}
                             />
                         ),
-                    })}
+                    })}l
                 />
 
                 <Stack.Screen
                     name="InfoProduto"
                     component={InfoProduto}
-                    zIndex={100}
-                    options={({ navigation }) => ({
+                    options={({navigation}) => ({
                         headerShown: true,
-                        headerTransparent: true,
-                        headerStyle: { zIndex: 100 },
+                        title: "",
                         headerLeft: () => (
                             <Ionicons
                                 name="arrow-back"
                                 size={24}
                                 color="#052242"
-                                zIndex={101}
                                 style={{ marginLeft: 15 }}
                                 onPress={() => navigation.goBack()}
                             />
@@ -94,12 +91,10 @@ function AppNavigation() {
                                 name="heart-outline"
                                 size={24}
                                 color="#052242"
-                                zIndex={101}
                                 style={{ marginRight: 15 }}
                                 onPress={() => console.log("Favorito clicado")}
                             />
                         ),
-                        title: "", 
                     })}
                 />
                 <Stack.Screen
