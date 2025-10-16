@@ -119,7 +119,7 @@ export default function Produtos() {
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={styles.card}
-            onPress={() => navigation.navigate("InfoProduto", { produto: item })} // ✅ envia o produto
+            onPress={() => navigation.navigate("InfoProduto", { produto: item })} 
         >
             <Image source={item.imagem} style={styles.imagem} resizeMode="contain" />
             <View style={styles.info}>

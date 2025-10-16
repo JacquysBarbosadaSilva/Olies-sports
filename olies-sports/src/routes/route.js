@@ -69,17 +69,32 @@ function AppNavigation() {
                 <Stack.Screen
                     name="InfoProduto"
                     component={InfoProduto}
+                    zIndex={100}
                     options={({ navigation }) => ({
                         headerShown: true,
-                        title: "Info Produto",
+                        headerTransparent: true,
+                        headerStyle: { zIndex: 100 },
                         headerLeft: () => (
                             <Ionicons
                                 name="arrow-back"
                                 size={24}
+                                color="#052242"
+                                zIndex={101}
                                 style={{ marginLeft: 15 }}
                                 onPress={() => navigation.goBack()}
                             />
                         ),
+                        headerRight: () => (
+                            <Ionicons
+                                name="heart-outline"
+                                size={24}
+                                color="#052242"
+                                zIndex={101}
+                                style={{ marginRight: 15 }}
+                                onPress={() => console.log("Favorito clicado")}
+                            />
+                        ),
+                        title: "", 
                     })}
                 />
             </Stack.Navigator>
