@@ -104,8 +104,12 @@ export default function InfoProduto() {
                 <Text style={styles.nome}>{produto.nome}</Text>
                 <Text style={styles.preco}>R$ {produto.preco.toFixed(2)}</Text>
 
+                <TouchableOpacity style={styles.botaoDetalhes} onPress={() => navigation.navigate("DetalhesProduto", { produto: item })} >
+                    <Text style={styles.textoBotaoDetalhes}>Detalhes do Produto</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.botaoCarrinho}>
-                    <Text style={styles.textoBotao}>Adicionar ao carrinho →</Text>
+                    <Text style={styles.textoBotaoCarrinho}>Adicionar ao Carrinho</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -117,7 +121,7 @@ const styles = StyleSheet.create({
 
     imagem: {
         width: "100%",
-        // Altura do carrossel: 50% da tela
+        marginTop: 20,
         height: height * CAROUSEL_HEIGHT_RATIO, 
     },
 
@@ -141,15 +145,15 @@ const styles = StyleSheet.create({
     },
 
     infoContainer: {
-        // Agora 50% da tela
         backgroundColor: "#f5efe5",
-        paddingVertical: 40,
+        paddingVertical: 90,
         paddingHorizontal: 20,
         borderTopWidth: 1,
         borderColor: "#ddd",
     },
 
     coresContainer: {
+        marginTop: -40, 
         flexDirection: "row",
         gap: 12,
         marginBottom: 16,
@@ -181,15 +185,29 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
 
-    botaoCarrinho: {
+    botaoDetalhes: {
         backgroundColor: "#001f3f",
         paddingVertical: 14,
         borderRadius: 8,
         alignItems: "center",
     },
 
-    textoBotao: {
+    botaoCarrinho: {
+        backgroundColor: "#fff",
+        paddingVertical: 14,
+        borderRadius: 8,
+        alignItems: "center",
+                marginTop: 20,
+    },
+
+    textoBotaoDetalhes: {
         color: "#fff",
+        fontSize: 16,
+        fontWeight: "500",
+    },  
+
+    textoBotaoCarrinho: {
+        color: "#001f3f",
         fontSize: 16,
         fontWeight: "500",
     },
