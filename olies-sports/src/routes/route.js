@@ -44,7 +44,6 @@ function TabNavigator() {
 
             <Tab.Screen name="Perfil" component={Perfil} />
 
-            
         </Tab.Navigator>
     );
 }

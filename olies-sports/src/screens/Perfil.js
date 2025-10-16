@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 
-export default function PerfilScreen() {
+export default function PerfilScreen({navigation}) {
   const [novoEmail, setNovoEmail] = useState("");
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
@@ -43,10 +43,11 @@ export default function PerfilScreen() {
             <Text style={styles.menuText}>Alterar dados pessoais</Text>
           </View>
 
-          <View style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("Enderecos")}>
             <Image source={require("../assets/emoji-casa.png")} style={styles.menuIcon} />
             <Text style={styles.menuText}>Endereços</Text>
-          </View>
+          </TouchableOpacity>
+
         </View>
 
         {/* Alterar email */}
