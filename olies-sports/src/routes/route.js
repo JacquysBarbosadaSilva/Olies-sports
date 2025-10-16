@@ -10,6 +10,7 @@ import Categorias from "../screens/Categorias";
 import Produtos from "../screens/Produtos";
 import InfoProduto from "../screens/InfoProduto";
 import SplashScreen from "../screens/SplashScreen"; 
+import Enderecos from "../screens/Enderecos";
 
 
 const Tab = createBottomTabNavigator();
@@ -42,6 +43,8 @@ function TabNavigator() {
             <Tab.Screen name="Categorias" component={Categorias} />
 
             <Tab.Screen name="Perfil" component={Perfil} />
+
+            
         </Tab.Navigator>
     );
 }
@@ -100,6 +103,15 @@ function AppNavigation() {
                         title: "", 
                     })}
                 />
+                <Stack.Screen
+                    name="Enderecos"
+                    component={Enderecos}
+                    options={{
+                        headerShown: false,
+                        title: "Endereços",
+                    }}
+                    />
+
             </Stack.Navigator>
         </NavigationContainer>
     );
