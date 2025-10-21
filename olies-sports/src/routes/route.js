@@ -11,7 +11,7 @@ import Produtos from "../screens/Produtos";
 import InfoProduto from "../screens/InfoProduto";
 import SplashScreen from "../screens/SplashScreen"; 
 import Enderecos from "../screens/Enderecos";
-
+import Pagamento from "../screens/Pagamento";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -61,6 +61,23 @@ function TabNavigator() {
                 <Stack.Screen
                     name="Produtos"
                     component={Produtos}
+                    options={({ navigation }) => ({
+                        headerShown: true,
+                        title: "Produtos",
+                        headerLeft: () => (
+                            <Ionicons
+                                name="arrow-back"
+                                size={24}
+                                style={{ marginLeft: 15 }}
+                                onPress={() => navigation.goBack()}
+                            />
+                        ),
+                    })}l
+                />
+                
+                <Stack.Screen
+                    name="Pagamento"
+                    component={Pagamento}
                     options={({ navigation }) => ({
                         headerShown: true,
                         title: "Produtos",
