@@ -48,12 +48,16 @@ function TabNavigator() {
     );
 }
 
-function AppNavigation({navigation}) {
-    return (
 
+           function AppNavigation() {
+    return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
+                {/* SplashScreen como primeira tela */}
+                <Stack.Screen name="Splash" component={SplashScreen} />
+
+                {/* Navegação principal */}
+                <Stack.Screen name="Tabs" component={TabNavigator} />
                 <Stack.Screen
                     name="Produtos"
                     component={Produtos}
