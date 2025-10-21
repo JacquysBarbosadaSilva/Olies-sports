@@ -1,5 +1,5 @@
 import React from "react";
-import {TouchableOpacity, View, Text } from 'react-native';
+import { TouchableOpacity, View, Text } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -16,178 +16,237 @@ import Pagamento from "../screens/Pagamento";
 import DetalhesProduto from "../screens/DetalhesProduto";
 import EditarEndereco from "../screens/EditarEndereco";
 import CadastrarEndereco from "../screens/CadastrarEndereco";
+import Comentarios from "../screens/Comentarios";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function TabNavigator() {
-    return (
-        <Tab.Navigator
-            screenOptions={({ route }) => ({
-                tabBarIcon: ({ focused, color, size }) => {
-                    let iconName;
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
 
-                    if (route.name === "Home") {
-                        iconName = focused ? "home" : "home-outline";
-                    } else if (route.name === "Perfil") {
-                        iconName = focused ? "person" : "person-outline";
-                    } else if (route.name === "Categorias") {
-                        iconName = focused ? "list" : "list-outline";
-                    }
+          if (route.name === "Home") {
+            iconName = focused ? "home" : "home-outline";
+          } else if (route.name === "Perfil") {
+            iconName = focused ? "person" : "person-outline";
+          } else if (route.name === "Categorias") {
+            iconName = focused ? "list" : "list-outline";
+          }
 
-                    return <Ionicons name={iconName} size={size} color={color} />;
-                },
-                tabBarActiveTintColor: "#052242", // Cor quando ativo
-                tabBarInactiveTintColor: "#A3A3A3", // Cor quando inativo
-                headerShown: false,
-            })}
-        >
-            <Tab.Screen name="Home" component={HomeScreen} />
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: "#052242", // Cor quando ativo
+        tabBarInactiveTintColor: "#A3A3A3", // Cor quando inativo
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
 
-            <Tab.Screen name="Categorias" component={Categorias} />
+      <Tab.Screen name="Categorias" component={Categorias} />
 
-            <Tab.Screen name="Perfil" component={Perfil} />
-        </Tab.Navigator>
-    );
+      <Tab.Screen name="Perfil" component={Perfil} />
+    </Tab.Navigator>
+  );
 }
 
 function AppNavigation() {
-    return (
-        <NavigationContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-                {/* SplashScreen como primeira tela */}
-                <Stack.Screen name="Splash" component={SplashScreen} />
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {/* SplashScreen como primeira tela */}
+        <Stack.Screen name="Splash" component={SplashScreen} />
 
-                {/* Navegação principal */}
-                <Stack.Screen name="Tabs" component={TabNavigator} />
-                <Stack.Screen
-                    name="Produtos"
-                    component={Produtos}
-                    options={({ navigation }) => ({
-                        headerShown: true,
-                        title: "Produtos",
-                        headerLeft: () => (
-                            <Ionicons
-                                name="arrow-back"
-                                size={24}
-                                style={{ marginLeft: 15 }}
-                                onPress={() => navigation.goBack()}
-                            />
-                        ),
-                    })}
-                    l
-                />
-                <Stack.Screen
-                    name="Pagamento"
-                    component={Pagamento}
-                    options={({ navigation }) => ({
-                        headerShown: true,
-                        title: "Produtos",
-                        headerLeft: () => (
-                            <Ionicons
-                                name="arrow-back"
-                                size={24}
-                                style={{ marginLeft: 15 }}
-                                onPress={() => navigation.goBack()}
-                            />
-                        ),
-                    })}
-                    l
-                />
+        {/* Navegação principal */}
+        <Stack.Screen name="Tabs" component={TabNavigator} />
+        <Stack.Screen
+          name="Produtos"
+          component={Produtos}
+          options={({ navigation }) => ({
+            headerShown: true,
+            title: "Produtos",
+            headerLeft: () => (
+              <Ionicons
+                name="arrow-back"
+                size={24}
+                style={{ marginLeft: 15 }}
+                onPress={() => navigation.goBack()}
+              />
+            ),
+          })}
+          l
+        />
+        <Stack.Screen
+          name="Pagamento"
+          component={Pagamento}
+          options={({ navigation }) => ({
+            headerShown: true,
+            title: "Produtos",
+            headerLeft: () => (
+              <Ionicons
+                name="arrow-back"
+                size={24}
+                style={{ marginLeft: 15 }}
+                onPress={() => navigation.goBack()}
+              />
+            ),
+          })}
+          l
+        />
 
-                <Stack.Screen
-                    name="InfoProduto"
-                    component={InfoProduto}
-                    options={({ navigation }) => ({
-                        headerShown: true,
-                        title: "",
-                        headerLeft: () => (
-                            <Ionicons
-                                name="arrow-back"
-                                size={24}
-                                color="#052242"
-                                style={{ marginLeft: 15 }}
-                                onPress={() => navigation.goBack()}
-                            />
-                        ),
-                        headerRight: () => (
-                            <Ionicons
-                                name="heart-outline"
-                                size={24}
-                                color="#052242"
-                                style={{ marginRight: 15 }}
-                                onPress={() => console.log("Favorito clicado")}
-                            />
-                        ),
-                    })}
-                />
+        <Stack.Screen
+          name="InfoProduto"
+          component={InfoProduto}
+          options={({ navigation }) => ({
+            headerShown: true,
+            title: "",
+            headerLeft: () => (
+              <Ionicons
+                name="arrow-back"
+                size={24}
+                color="#052242"
+                style={{ marginLeft: 15 }}
+                onPress={() => navigation.goBack()}
+              />
+            ),
+            headerRight: () => (
+              <Ionicons
+                name="heart-outline"
+                size={24}
+                color="#052242"
+                style={{ marginRight: 15 }}
+                onPress={() => console.log("Favorito clicado")}
+              />
+            ),
+          })}
+        />
 
-                <Stack.Screen
-                    name="DetalhesProduto"
-                    component={DetalhesProduto}
-                    options={({ navigation }) => ({
-                        headerShown: true,
-                        headerTitle: "",
-                        headerStyle: {
-                            backgroundColor: "#FFFFFF", 
-                            elevation: 0,
-                            shadowOpacity: 0,
-                        },
-                        headerLeft: () => (
-                            <Ionicons
-                                name="arrow-back"
-                                size={24}
-                                color="#052242"
-                                style={{ marginLeft: 15 }}
-                                onPress={() => navigation.goBack()}
-                            />
-                        ),
-                        headerTitle: () => (
-                            <View style={{ alignItems: "center" }}>
-                                <Text style={{ fontSize: 18, fontWeight: "500", color: "#000000" }}>Jordan Zion 4</Text>
-                                <Text style={{ fontSize: 14, color: "#555555", marginTop: 2 }}>R$ 1199,99</Text>
-                            </View>
-                        ),
-                        headerRight: () => (
-                            <TouchableOpacity onPress={() => console.log("Adicionar aos favoritos")}>
-                                <Ionicons
-                                    name="heart-outline"
-                                    size={24}
-                                    color="#555555"
-                                    style={{ marginRight: 15 }}
-                                />
-                            </TouchableOpacity>
-                        ),
-                    })}
+        <Stack.Screen
+          name="DetalhesProduto"
+          component={DetalhesProduto}
+          options={({ navigation }) => ({
+            headerShown: true,
+            headerTitle: "",
+            headerStyle: {
+              backgroundColor: "#ded7cd",
+              elevation: 0,
+              shadowOpacity: 0,
+            },
+            headerLeft: () => (
+              <Ionicons
+                name="arrow-back"
+                size={24}
+                color="#052242"
+                style={{ marginLeft: 15 }}
+                onPress={() => navigation.goBack()}
+              />
+            ),
+            headerTitle: () => (
+              <View style={{ alignItems: "center" }}>
+                <Text
+                  style={{ fontSize: 18, fontWeight: "500", color: "#000000" }}
+                >
+                  Jordan Zion 4
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#555555",
+                    marginTop: 2,
+                    width: 63,
+                    textAlign: "center",
+                  }}
+                >
+                  R$ 1199,99
+                </Text>
+              </View>
+            ),
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={() => console.log("Adicionar aos favoritos")}
+              >
+                <Ionicons
+                  name="heart-outline"
+                  size={24}
+                  color="#555555"
+                  style={{ marginRight: 15 }}
                 />
-                <Stack.Screen
-                    name="Enderecos"
-                    component={Enderecos}
-                    options={{
-                        headerShown: false,
-                        title: "Endereços",
-                    }}
-                />
-                    
-                <Stack.Screen
-                    name="EditarEndereco"
-                    component={EditarEndereco}
-                    options={{
-                        headerShown: false,
-                        title: "EditarEnderecos",
-                    }}
-                    />
-                <Stack.Screen
-                    name="CadastrarEndereco"
-                    component={CadastrarEndereco}
-                    options={{
-                        headerShown: false,
-                        title: "CadastrarEndereco",
-                    }}
-                    />
-            </Stack.Navigator>
-        </NavigationContainer>
-    );
+              </TouchableOpacity>
+            ),
+          })}
+        />
+
+        <Stack.Screen
+          name="Comentarios"
+          component={Comentarios}
+          options={({ navigation }) => ({
+            headerShown: true,
+            headerTitle: "",
+            headerStyle: {
+              backgroundColor: "#f3ece2",
+              elevation: 0,
+              shadowOpacity: 0,
+            },
+            headerLeft: () => (
+              <Ionicons
+                name="close"
+                size={24}
+                color="#052242"
+                style={{ marginLeft: 15 }}
+                onPress={() => navigation.goBack()}
+              />
+            ),
+            headerTitle: () => (
+              <View style={{ alignItems: "center" }}>
+                <Text
+                  style={{ fontSize: 18, fontWeight: "500", color: "#000000" }}
+                >
+                  Comentários
+                </Text>
+
+                <View style={{ flexDirection: "row", marginTop: 2 }}>
+                  <Ionicons name="star" size={16} color="#052242" />
+                  <Ionicons name="star" size={16} color="#052242" />
+                  <Ionicons name="star" size={16} color="#052242" />
+                  <Ionicons name="star" size={16} color="#052242" />
+                  <Ionicons name="star" size={16} color="#052242" />
+                </View>
+              </View>
+            ),
+
+            headerRight: () => <View style={{ marginRight: 15 }} />,
+          })}
+        />
+        <Stack.Screen
+          name="Enderecos"
+          component={Enderecos}
+          options={{
+            headerShown: false,
+            title: "Endereços",
+          }}
+        />
+
+        <Stack.Screen
+          name="EditarEndereco"
+          component={EditarEndereco}
+          options={{
+            headerShown: false,
+            title: "EditarEnderecos",
+          }}
+        />
+        <Stack.Screen
+          name="CadastrarEndereco"
+          component={CadastrarEndereco}
+          options={{
+            headerShown: false,
+            title: "CadastrarEndereco",
+          }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
 }
 
 export default AppNavigation;
