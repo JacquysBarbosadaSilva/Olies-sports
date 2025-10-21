@@ -11,6 +11,8 @@ import Produtos from "../screens/Produtos";
 import InfoProduto from "../screens/InfoProduto";
 import SplashScreen from "../screens/SplashScreen"; 
 import Enderecos from "../screens/Enderecos";
+import EditarEndereco from "../screens/EditarEndereco";
+import CadastrarEndereco from "../screens/CadastrarEndereco";
 
 
 const Tab = createBottomTabNavigator();
@@ -48,12 +50,16 @@ function TabNavigator() {
     );
 }
 
-function AppNavigation({navigation}) {
-    return (
 
+           function AppNavigation() {
+    return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
+                {/* SplashScreen como primeira tela */}
+                <Stack.Screen name="Splash" component={SplashScreen} />
+
+                {/* Navegação principal */}
+                <Stack.Screen name="Tabs" component={TabNavigator} />
                 <Stack.Screen
                     name="Produtos"
                     component={Produtos}
@@ -103,6 +109,23 @@ function AppNavigation({navigation}) {
                     options={{
                         headerShown: false,
                         title: "Endereços",
+                    }}
+                    />
+
+                <Stack.Screen
+                    name="EditarEndereco"
+                    component={EditarEndereco}
+                    options={{
+                        headerShown: false,
+                        title: "EditarEnderecos",
+                    }}
+                    />
+                <Stack.Screen
+                    name="CadastrarEndereco"
+                    component={CadastrarEndereco}
+                    options={{
+                        headerShown: false,
+                        title: "CadastrarEndereco",
                     }}
                     />
 
