@@ -14,6 +14,8 @@ import SplashScreen from "../screens/SplashScreen";
 import Enderecos from "../screens/Enderecos";
 import Pagamento from "../screens/Pagamento";
 import DetalhesProduto from "../screens/DetalhesProduto";
+import EditarEndereco from "../screens/EditarEndereco";
+import CadastrarEndereco from "../screens/CadastrarEndereco";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -75,7 +77,6 @@ function AppNavigation() {
                     })}
                     l
                 />
-
                 <Stack.Screen
                     name="Pagamento"
                     component={Pagamento}
@@ -167,6 +168,23 @@ function AppNavigation() {
                         title: "Endereços",
                     }}
                 />
+                    
+                <Stack.Screen
+                    name="EditarEndereco"
+                    component={EditarEndereco}
+                    options={{
+                        headerShown: false,
+                        title: "EditarEnderecos",
+                    }}
+                    />
+                <Stack.Screen
+                    name="CadastrarEndereco"
+                    component={CadastrarEndereco}
+                    options={{
+                        headerShown: false,
+                        title: "CadastrarEndereco",
+                    }}
+                    />
             </Stack.Navigator>
         </NavigationContainer>
     );

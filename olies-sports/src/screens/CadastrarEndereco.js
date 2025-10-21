@@ -17,7 +17,7 @@ export default function PerfilScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color="#001f3f" />
         </TouchableOpacity>
-        <Text style={styles.title}>Endereços</Text>
+        <Text style={styles.title}>Cadastrar Endereço</Text>
         <Image source={require("../assets/logotipo.png")} style={styles.logo} />
       </View>
 
