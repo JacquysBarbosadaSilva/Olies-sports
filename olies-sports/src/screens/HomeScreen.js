@@ -1,9 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet, TextInput, Image, ScrollView, Pressable } from "react-native";
+import { View, Text, StyleSheet, TextInput, Image, ScrollView, Pressable, TouchableOpacity } from "react-native";
 import { useFonts } from 'expo-font';
 import { useState } from "react";
 
-export default function HomeScreen() {
+export default function HomeScreen({navigation}) {
     const handlePress = () => {
         console.log('Botão pressionado!');
     };
@@ -29,7 +29,7 @@ export default function HomeScreen() {
                 />
                 <Image source={require("../assets/logotipo.png")} style={styles.logo}  />
             </View>
-
+            <TouchableOpacity onPress={() => navigation.navigate('Pagamento')}>
             <View style={styles.banner}>
                 <Image
                     source={require("../assets/banner-promocao.jpg")}
@@ -37,6 +37,7 @@ export default function HomeScreen() {
                     resizeMode="contain"
                 />
             </View>
+            </TouchableOpacity>
 
             <View style={styles.categoriesContainer}>
                 <View style={styles.categoryButton}>
