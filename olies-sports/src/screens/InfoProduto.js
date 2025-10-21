@@ -104,11 +104,11 @@ export default function InfoProduto() {
                 <Text style={styles.nome}>{produto.nome}</Text>
                 <Text style={styles.preco}>R$ {produto.preco.toFixed(2)}</Text>
 
-                <TouchableOpacity style={styles.botaoDetalhes} onPress={() => navigation.navigate("DetalhesProduto", { produto: item })} >
+                <TouchableOpacity style={styles.botaoDetalhes} onPress={() => navigation.navigate("DetalhesProduto")}>
                     <Text style={styles.textoBotaoDetalhes}>Detalhes do Produto</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.botaoCarrinho}>
+                <TouchableOpacity style={styles.botaoCarrinho} onPress={() => navigation.navigate("Carrinho")}>
                     <Text style={styles.textoBotaoCarrinho}>Adicionar ao Carrinho</Text>
                 </TouchableOpacity>
             </View>

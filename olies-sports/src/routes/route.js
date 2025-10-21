@@ -1,4 +1,5 @@
 import React from "react";
+import {TouchableOpacity, View, Text } from 'react-native';
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -9,11 +10,12 @@ import Perfil from "../screens/Perfil";
 import Categorias from "../screens/Categorias";
 import Produtos from "../screens/Produtos";
 import InfoProduto from "../screens/InfoProduto";
-import SplashScreen from "../screens/SplashScreen"; 
+import SplashScreen from "../screens/SplashScreen";
 import Enderecos from "../screens/Enderecos";
+import Pagamento from "../screens/Pagamento";
+import DetalhesProduto from "../screens/DetalhesProduto";
 import EditarEndereco from "../screens/EditarEndereco";
 import CadastrarEndereco from "../screens/CadastrarEndereco";
-
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -45,13 +47,11 @@ function TabNavigator() {
             <Tab.Screen name="Categorias" component={Categorias} />
 
             <Tab.Screen name="Perfil" component={Perfil} />
-
         </Tab.Navigator>
     );
 }
 
-
-           function AppNavigation() {
+function AppNavigation() {
     return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -74,13 +74,31 @@ function TabNavigator() {
                                 onPress={() => navigation.goBack()}
                             />
                         ),
-                    })}l
+                    })}
+                    l
+                />
+                <Stack.Screen
+                    name="Pagamento"
+                    component={Pagamento}
+                    options={({ navigation }) => ({
+                        headerShown: true,
+                        title: "Produtos",
+                        headerLeft: () => (
+                            <Ionicons
+                                name="arrow-back"
+                                size={24}
+                                style={{ marginLeft: 15 }}
+                                onPress={() => navigation.goBack()}
+                            />
+                        ),
+                    })}
+                    l
                 />
 
                 <Stack.Screen
                     name="InfoProduto"
                     component={InfoProduto}
-                    options={({navigation}) => ({
+                    options={({ navigation }) => ({
                         headerShown: true,
                         title: "",
                         headerLeft: () => (
@@ -103,6 +121,45 @@ function TabNavigator() {
                         ),
                     })}
                 />
+
+                <Stack.Screen
+                    name="DetalhesProduto"
+                    component={DetalhesProduto}
+                    options={({ navigation }) => ({
+                        headerShown: true,
+                        headerTitle: "",
+                        headerStyle: {
+                            backgroundColor: "#FFFFFF", 
+                            elevation: 0,
+                            shadowOpacity: 0,
+                        },
+                        headerLeft: () => (
+                            <Ionicons
+                                name="arrow-back"
+                                size={24}
+                                color="#052242"
+                                style={{ marginLeft: 15 }}
+                                onPress={() => navigation.goBack()}
+                            />
+                        ),
+                        headerTitle: () => (
+                            <View style={{ alignItems: "center" }}>
+                                <Text style={{ fontSize: 18, fontWeight: "500", color: "#000000" }}>Jordan Zion 4</Text>
+                                <Text style={{ fontSize: 14, color: "#555555", marginTop: 2 }}>R$ 1199,99</Text>
+                            </View>
+                        ),
+                        headerRight: () => (
+                            <TouchableOpacity onPress={() => console.log("Adicionar aos favoritos")}>
+                                <Ionicons
+                                    name="heart-outline"
+                                    size={24}
+                                    color="#555555"
+                                    style={{ marginRight: 15 }}
+                                />
+                            </TouchableOpacity>
+                        ),
+                    })}
+                />
                 <Stack.Screen
                     name="Enderecos"
                     component={Enderecos}
@@ -110,8 +167,8 @@ function TabNavigator() {
                         headerShown: false,
                         title: "Endereços",
                     }}
-                    />
-
+                />
+                    
                 <Stack.Screen
                     name="EditarEndereco"
                     component={EditarEndereco}
@@ -128,7 +185,6 @@ function TabNavigator() {
                         title: "CadastrarEndereco",
                     }}
                     />
-
             </Stack.Navigator>
         </NavigationContainer>
     );
