@@ -7,24 +7,36 @@ import {
   Image,
   StyleSheet,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function PerfilScreen({ navigation }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       {/* Cabeçalho */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#001f3f" />
+        </TouchableOpacity>
         <Text style={styles.title}>Endereços</Text>
         <Image source={require("../assets/logotipo.png")} style={styles.logo} />
       </View>
 
       {/* Conteúdo */}
       <View style={styles.content}>
-        <Text style={styles.sectionTitle}>Endereços</Text>
-
         <View style={styles.addressBox}>
-          <Text style={styles.addressText}>
+          <Text style={styles.addressTitle}>
             Rua Arthur Benedito de Oliveira Porto, 25
           </Text>
+          <Text style={styles.addressDetails}>
+            Jardim Rafael - CEP 12288-460 - Caçapava - SP
+          </Text>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity style={styles.editButton}>
+            <Ionicons name="pencil-outline" size={18} color="#001f3f" style={{ marginRight: 6 }} />
+            <Text style={styles.editButtonText}>Editar Endereço</Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity
@@ -48,14 +60,16 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#F3ECE2",
-    padding: 15,
+    paddingHorizontal: 15,
+    paddingTop: 20,
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
+    color: "#001f3f",
   },
   logo: {
     width: 70,
@@ -65,26 +79,42 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 15,
-  },
   addressBox: {
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 6,
+    borderRadius: 8,
     padding: 15,
     marginBottom: 20,
   },
-  addressText: {
+  addressTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#001f3f",
+    marginBottom: 5,
+  },
+  addressDetails: {
+    fontSize: 14,
+    color: "#555",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#ccc",
+    marginVertical: 12,
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+  },
+  editButtonText: {
+    color: "#001f3f",
+    fontWeight: "bold",
     fontSize: 15,
-    color: "#333",
   },
   saveButton: {
     backgroundColor: "#001f3f",
-    padding: 12,
+    padding: 14,
     borderRadius: 6,
     alignItems: "center",
     width: 250,
