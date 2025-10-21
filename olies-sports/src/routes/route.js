@@ -11,7 +11,9 @@ import Produtos from "../screens/Produtos";
 import InfoProduto from "../screens/InfoProduto";
 import SplashScreen from "../screens/SplashScreen"; 
 import Enderecos from "../screens/Enderecos";
-import Pagamento from "../screens/Pagamento";
+import EditarEndereco from "../screens/EditarEndereco";
+import CadastrarEndereco from "../screens/CadastrarEndereco";
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -74,23 +76,6 @@ function TabNavigator() {
                         ),
                     })}l
                 />
-                
-                <Stack.Screen
-                    name="Pagamento"
-                    component={Pagamento}
-                    options={({ navigation }) => ({
-                        headerShown: true,
-                        title: "Produtos",
-                        headerLeft: () => (
-                            <Ionicons
-                                name="arrow-back"
-                                size={24}
-                                style={{ marginLeft: 15 }}
-                                onPress={() => navigation.goBack()}
-                            />
-                        ),
-                    })}l
-                />
 
                 <Stack.Screen
                     name="InfoProduto"
@@ -124,6 +109,23 @@ function TabNavigator() {
                     options={{
                         headerShown: false,
                         title: "Endereços",
+                    }}
+                    />
+
+                <Stack.Screen
+                    name="EditarEndereco"
+                    component={EditarEndereco}
+                    options={{
+                        headerShown: false,
+                        title: "EditarEnderecos",
+                    }}
+                    />
+                <Stack.Screen
+                    name="CadastrarEndereco"
+                    component={CadastrarEndereco}
+                    options={{
+                        headerShown: false,
+                        title: "CadastrarEndereco",
                     }}
                     />
 
