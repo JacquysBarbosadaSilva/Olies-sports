@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Image } from 'react-native';
+import logo from '../assets/logotipo.png';
 
 const App = () => {
     const [email, setEmail] = useState('victorkoba08@gmail.com');
@@ -36,9 +38,7 @@ const App = () => {
         <div className="flex items-center justify-center min-h-screen bg-[#f0f0f0] p-4">
             <div className={`w-full max-w-sm p-8 md:min-h-0 rounded-3xl shadow-2xl ${appBg}`}>
                 <div className="flex flex-col items-center justify-center mb-10 mt-6">
-                    <svg className={`w-16 h-16 ${primaryDark}`} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm2 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"></path>
-                    </svg>
+                    <Image source={logo} style={{ width: 64, height: 64, resizeMode: 'contain' }} />
                     <h1 className={`text-4xl font-extrabold ${primaryDark} tracking-tighter mt-1`}>
                         Olie's <span className="font-normal">sports</span>
                     </h1>
