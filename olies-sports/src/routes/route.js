@@ -18,6 +18,8 @@ import EditarEndereco from "../screens/EditarEndereco";
 import CadastrarEndereco from "../screens/CadastrarEndereco";
 import Comentarios from "../screens/Comentarios";
 import Carrinho from "../screens/Carrinho";
+import Login from "../screens/Login";
+import Cadastro from "../screens/Cadastro";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -81,7 +83,6 @@ function AppNavigation() {
               />
             ),
           })}
-          l
         />
         <Stack.Screen
           name="Pagamento"
@@ -98,7 +99,6 @@ function AppNavigation() {
               />
             ),
           })}
-          l
         />
 
         <Stack.Screen
@@ -249,7 +249,26 @@ function AppNavigation() {
             title: "CadastrarEndereco",
           }}
         />
+
+        <Stack.Screen
+          name="Login"
+          component={Login}
+          options={{
+            headerShown: false,
+            title: "Login",
+          }}
+        />
+        
+        <Stack.Screen
+            name="Cadastro"
+            component={Cadastro}
+            options={{
+              headerShown: false,
+              title: "Cadastro",
+            }}
+          />
       </Stack.Navigator>
+
     </NavigationContainer>
   );
 }

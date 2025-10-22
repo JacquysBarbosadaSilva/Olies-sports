@@ -1,292 +1,358 @@
-import React, { useState } from 'react';
-import { Image } from 'react-native';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Image,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons"; // ícone de olho
+import { useNavigation } from "@react-navigation/native";
 
-const logoUrl = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4RCJUVETB%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T213109Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIF5r9n3SlIlwrWIih6WGQBbM0tGPsmu0u7PQwsqhz%2BPlAiEAzLnLGZ5HWc0lLBpQCkn8Ylt59i%2BhXca%2BCmKpOjpOQeIqgwMINxAAGgw2NzEwNTQ0OTczMzciDDFO1pKJNryxXbCVoyrgAmMmOaS%2BflOGH6QAoaH6tzhwkvCfOw1wekhWdxd6GUAlmfhHfXztqglXHvi2%2FQTpdwpgBqVFOX54Jr9tA%2FG%2BhCyO9tJQWvEGsSpNrutHIdNSftmozjutyzZYH6KLii%2BZaAP%2BCN3lYeN%2FB%2FJLvosSMsCPw7pxl6xzcYL4d6GTtqsKlK6Kcv%2BDODZWmZe3jPJKj1%2FjO%2B203fQN9Dtx1ggorUTAuKfTXzaCnYvkpRPCJ2F6052rKZnjND%2FGmyvflyFr7JnTgKF3HVI164zMpxtFN%2BspzP5UBHMui0wtJR7XtVQbr8rytz4f6DYoDmL4RVxX0uGr2%2BCK1b6tGzOiEdLBsgZ21Z0e4%2Fl%2FjG%2FuxejOUZfQwhJpHnY5kbMu1oyYUKvuKTsyAgktsLbNkMG1WuopiJXaQKj%2Fcl%2BH0x0KXYz3q8mttq8QUpqOmh9rnkc6DxEMGmIWHzB9rLtRvhN7uc9PWXQwgNzkxwY6hwKiJY9COGoIhCXtEd48aip89g9td2xbtd54Ojr2N4wznAW2oK1ufZ9OTiMIo8tuOL%2BUhJigtU3KxkJugU2JVjLAnDctb6AImhjY4ULdlqxP35%2FI3LHaM1t5Wiw7ltZ3laOJ0FsSDiNt693oroD3pSBxs%2B4R01ye3Ra62%2B7w7wkJxGLcPLOHraDS36OLrSQh4jOAjiOey%2BrKt7t6QaiJgFu4qRVWLA23wQzhYTMRNpTzaTzU26pewVPuRhE5y7X82XqNiNdum8vVwd2KO6ZHlOWxKDqhiOV4PnOoNYGuDj99HpOK6hE8UIThBdCQAshDTd6VKPUYsMEc%2FQZQWUvQHDSYA31Mc7nikQ%3D%3D&X-Amz-Signature=11eb26d8eb399b6d2f91c9721a92839350d8a784acefe0d988a547de57c03b6f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
+const logo =
+  "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4RCJUVETB%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T213109Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIF5r9n3SlIlwrWIih6WGQBbM0tGPsmu0u7PQwsqhz%2BPlAiEAzLnLGZ5HWc0lLBpQCkn8Ylt59i%2BhXca%2BCmKpOjpOQeIqgwMINxAAGgw2NzEwNTQ0OTczMzciDDFO1pKJNryxXbCVoyrgAmMmOaS%2BflOGH6QAoaH6tzhwkvCfOw1wekhWdxd6GUAlmfhHfXztqglXHvi2%2FQTpdwpgBqVFOX54Jr9tA%2FG%2BhCyO9tJQWvEGsSpNrutHIdNSftmozjutyzZYH6KLii%2BZaAP%2BCN3lYeN%2FB%2FJLvosSMsCPw7pxl6xzcYL4d6GTtqsKlK6Kcv%2BDODZWmZe3jPJKj1%2FjO%2B203fQN9Dtx1ggorUTAuKfTXzaCnYvkpRPCJ2F6052rKZnjND%2FGmyvflyFr7JnTgKF3HVI164zMpxtFN%2BspzP5UBHMui0wtJR7XtVQbr8rytz4f6DYoDmL4RVxX0uGr2%2BCK1b6tGzOiEdLBsgZ21Z0e4%2Fl%2FjG%2FuxejOUZfQwhJpHnY5kbMu1oyYUKvuKTsyAgktsLbNkMG1WuopiJXaQKj%2Fcl%2BH0x0KXYz3q8mttq8QUpqOmh9rnkc6DxEMGmIWHzB9rLtRvhN7uc9PWXQwgNzkxwY6hwKiJY9COGoIhCXtEd48aip89g9td2xbtd54Ojr2N4wznAW2oK1ufZ9OTiMIo8tuOL%2BUhJigtU3KxkJugU2JVjLAnDctb6AImhjY4ULdlqxP35%2FI3LHaM1t5Wiw7ltZ3laOJ0FsSDiNt693oroD3pSBxs%2B4R01ye3Ra62%2B7w7wkJxGLcPLOHraDS36OLrSQh4jOAjiOey%2BrKt7t6QaiJgFu4qRVWLA23wQzhYTMRNpTzaTzU26pewVPuRhE5y7X82XqNiNdum8vVwd2KO6ZHlOWxKDqhiOV4PnOoNYGuDj99HpOK6hE8UIThBdCQAshDTd6VKPUYsMEc%2FQZQWUvQHDSYA31Mc7nikQ%3D%3D&X-Amz-Signature=11eb26d8eb399b6d2f91c9721a92839350d8a784acefe0d988a547de57c03b6f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
 
+export default function TelaCadastro() {
+  const navigation = useNavigation();
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [dados, setDados] = useState({
+    email: "",
+    senha: "",
+    nome: "",
+    sobrenome: "",
+    cpf: "",
+    dataNascimento: "",
+    telefone: "",
+    genero: "",
+    cep: "",
+    endereco: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
+    referencia: "",
+  });
 
-// O componente de cadastro em um único formulário rolável
-const RegistrationScreen = ({ setCurrentScreen }) => {
-    // 1. Cores e Classes
-    const primaryDark = 'text-[#052242]';
-    const bgPrimaryDark = 'bg-[#052242]';
-    const appBg = 'bg-[#F3ECE2]'; 
-    const inputBg = 'bg-[#EEEEEE]'; 
-    const inputColor = 'text-[#9D9D9D]'; 
-    const grayText = 'text-gray-700';
+  const handleChange = (campo, valor) => {
+    setDados({ ...dados, [campo]: valor });
+  };
 
-    // 2. Estados
-    const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [message, setMessage] = useState(null);
-    const [formData, setFormData] = useState({
-        email: '', password: '', name: '', surname: '', cpf: '',
-        birthDate: '', phone: '', gender: '', cep: '', address: '',
-        number: '', complement: '', neighborhood: '', city: '',
-        state: '', referencePoint: ''
-    });
+  const handleCadastro = () => {
+    alert("Cadastro enviado com sucesso!");
+  };
 
-    
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Image
+          source={{ uri: logo }} // Coloque seu logo em assets/logo.png
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.criarConta}>Criar uma conta</Text>
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Informações da conta</Text>
 
-    const togglePasswordVisibility = () => {
-        setShowPassword(prev => !prev);
-    };
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Email"
+          keyboardType="email-address"
+          value={dados.email}
+          onChangeText={(v) => handleChange("email", v)}
+        />
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setMessage(null);
-        
-        
-        if (!formData.email || !formData.password || !formData.name || !formData.cpf) {
-             setMessage({ type: 'error', text: 'Preencha os campos obrigatórios.' });
-             setIsLoading(false);
-             setTimeout(() => setMessage(null), 3000);
-             return;
-        }
+        <View style={styles.senhaContainer}>
+          <TextInput
+            style={[styles.input, styles.fontKantumruySemiBold, { flex: 1 }]}
+            placeholder="Senha"
+            secureTextEntry={!mostrarSenha}
+            value={dados.senha}
+            onChangeText={(v) => handleChange("senha", v)}
+          />
+          <TouchableOpacity
+            onPress={() => setMostrarSenha(!mostrarSenha)}
+            style={styles.olhoIcone}
+          >
+            <Ionicons
+              name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
+              size={22}
+              color="#555"
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-        
-        setTimeout(() => {
-            setMessage({ type: 'success', text: 'Cadastro concluído! Redirecionando para o login.' });
-            setIsLoading(false);
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Dados pessoais</Text>
 
-            setTimeout(() => {
-                setMessage(null);
-                
-                if (setCurrentScreen) {
-                    setCurrentScreen('login'); 
-                }
-            }, 3000);
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Nome"
+          value={dados.nome}
+          onChangeText={(v) => handleChange("nome", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Sobrenome"
+          value={dados.sobrenome}
+          onChangeText={(v) => handleChange("sobrenome", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="CPF"
+          keyboardType="numeric"
+          value={dados.cpf}
+          onChangeText={(v) => handleChange("cpf", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Data de nascimento"
+          value={dados.dataNascimento}
+          onChangeText={(v) => handleChange("dataNascimento", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Telefone de contato"
+          keyboardType="phone-pad"
+          value={dados.telefone}
+          onChangeText={(v) => handleChange("telefone", v)}
+        />
 
-        }, 3000);
-    };
+        <Text style={styles.label}>Gênero</Text>
+        <View style={styles.generoContainer}>
+          <Pressable
+            style={styles.optionContainer}
+            onPress={() => handleChange("genero", "Masculino")}
+          >
+            <View
+              style={[
+                styles.outerCircle,
+                dados.genero === "Masculino" && styles.outerCircleSelecionado,
+              ]}
+            >
+              {dados.genero === "Masculino" && (
+                <View style={styles.innerCircle} />
+              )}
+            </View>
+            <Text style={styles.generoTexto}>Masculino</Text>
+          </Pressable>
 
+          <Pressable
+            style={styles.optionContainer}
+            onPress={() => handleChange("genero", "Feminino")}
+          >
+            <View
+              style={[
+                styles.outerCircle,
+                dados.genero === "Feminino" && styles.outerCircleSelecionado,
+              ]}
+            >
+              {dados.genero === "Feminino" && (
+                <View style={styles.innerCircle} />
+              )}
+            </View>
+            <Text style={styles.generoTexto}>Feminino</Text>
+          </Pressable>
+        </View>
+      </View>
 
-    
-    const FloatingInput = ({ label, name, type = 'text', value, onChange, isRequired = false, children }) => {
-        
-        return (
-            <div className={`relative ${inputBg} px-4 py-2 rounded-xl border-2 border-transparent focus-within:border-[#052242] transition duration-200`}>
-                <label
-                    htmlFor={name}
-                    className={`absolute top-2 left-4 text-xs font-semibold ${inputColor} pointer-events-none`}
-                >
-                    {label} {isRequired && <span className="text-red-500">*</span>}
-                </label>
-                <input
-                    id={name}
-                    name={name}
-                    type={type}
-                    value={value}
-                    onChange={onChange}
-                    // Aumenta o padding vertical para acomodar o rótulo
-                    className={`w-full pt-4 pb-0 bg-transparent ${primaryDark} font-medium text-base focus:outline-none`}
-                    required={isRequired}
-                    
-                    placeholder="" 
-                />
-                {children}
-            </div>
-        );
-    };
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Endereço</Text>
 
-    
-    const FloatingSelect = ({ label, name, value, onChange, isRequired = false, options }) => {
-        return (
-            <div className={`relative ${inputBg} px-4 py-2 rounded-xl border-2 border-transparent focus-within:border-[#052242] transition duration-200`}>
-                <label
-                    htmlFor={name}
-                    className={`absolute top-2 left-4 text-xs font-semibold ${inputColor} pointer-events-none`}
-                >
-                    {label} {isRequired && <span className="text-red-500">*</span>}
-                </label>
-                <div className="relative w-full pt-4">
-                    <select
-                        id={name}
-                        name={name}
-                        value={value}
-                        onChange={onChange}
-                        className={`w-full bg-transparent ${primaryDark} font-medium text-base focus:outline-none appearance-none cursor-pointer`}
-                        required={isRequired}
-                    >
-                        
-                        <option value="" disabled className={inputColor}>Selecione...</option>
-                        {options.map(opt => (
-                            <option key={opt.value} value={opt.value} className={primaryDark}>
-                                {opt.label}
-                            </option>
-                        ))}
-                    </select>
-                    
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center text-[#9D9D9D]">
-                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        );
-    };
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="CEP"
+          keyboardType="numeric"
+          value={dados.cep}
+          onChangeText={(v) => handleChange("cep", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Endereço"
+          value={dados.endereco}
+          onChangeText={(v) => handleChange("endereco", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Número"
+          keyboardType="numeric"
+          value={dados.numero}
+          onChangeText={(v) => handleChange("numero", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Complemento (opcional)"
+          value={dados.complemento}
+          onChangeText={(v) => handleChange("complemento", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Bairro"
+          value={dados.bairro}
+          onChangeText={(v) => handleChange("bairro", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Cidade"
+          value={dados.cidade}
+          onChangeText={(v) => handleChange("cidade", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Estado"
+          value={dados.estado}
+          onChangeText={(v) => handleChange("estado", v)}
+        />
+        <TextInput
+          style={[styles.input, styles.fontKantumruySemiBold]}
+          placeholder="Ponto de referência (opcional)"
+          value={dados.referencia}
+          onChangeText={(v) => handleChange("referencia", v)}
+        />
+      </View>
 
-    
-    const RadioOption = ({ label, name, value, currentSelection, onChange }) => {
-        const isChecked = currentSelection === value;
-        
-        
-        const radioClasses = isChecked
-            ? `w-6 h-6 rounded-full border-2 border-[#052242] ${inputBg} flex items-center justify-center transition duration-200`
-            : `w-6 h-6 rounded-full border-2 border-gray-400 ${appBg} flex items-center justify-center transition duration-200`;
+      <TouchableOpacity
+        style={styles.botao}
+        onPress={() => navigation.navigate("Tabs", {screen: "HomeScreen"})}
+      >
+        <Text style={styles.textoBotao}>Cadastrar</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
 
-        return (
-            <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                    type="radio"
-                    name={name}
-                    value={value}
-                    checked={isChecked}
-                    onChange={onChange}
-                    className="hidden" // Esconde o input nativo
-                />
-                <div className={radioClasses}>
-                    
-                    {isChecked && <div className="w-2.5 h-2.5 rounded-full bg-[#052242]"></div>}
-                </div>
-                
-                <span className={`text-base font-medium ${isChecked ? primaryDark : grayText}`}>{label}</span>
-            </label>
-        );
-    };
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "#fdf6ee",
+    padding: 20,
+  },
 
+  header: {
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 35,
+  },
+  logo: {
+    width: 290,
+    height: 290,
+  },
 
-    return (
-        <div className={`w-full max-w-sm p-8 md:min-h-0 rounded-3xl shadow-2xl ${appBg} overflow-y-auto`}>
+  criarConta: {
+    fontSize: 40, // text-3xl
+    fontWeight: "700", // font-bold
+    color: "#052242",
+    textAlign: "center",
+    marginBottom: 20,
+    width: "40%",
+    lineHeight: 38,
+  },
 
-            
-            <div className="flex flex-col items-center justify-center mb-10 mt-6">
-                <Image source={{uri: logoUrl}} style={{ width: 64, height: 64, resizeMode: 'contain' }} />
-                <h1 className={`text-4xl font-extrabold ${primaryDark} tracking-tighter mt-1`}>
-                    Olie's <span className="font-normal">sports</span>
-                </h1>
-            </div>
+  optionContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "30%",
+    gap: 6,
+  },
 
-            
-            <h2 className={`text-3xl font-bold ${primaryDark} text-center mb-10`}>
-                Criar uma conta
-            </h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
+  fontKantumruySemiBold: {
+    fontFamily: "Kantumruy Pro SemiBold",
+  },
+  fontKantumruyMedium: {
+    fontFamily: "Kantumruy Pro Medium",
+  },
 
-                
-                <h3 className={`text-lg font-bold ${primaryDark} mb-3`}>Informações da conta</h3>
-                <FloatingInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} isRequired />
-                <div className="relative">
-                    <FloatingInput label="Senha" name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleChange} isRequired>
-                        <span
-                            className={`absolute top-1/2 right-4 transform translate-y-2 cursor-pointer transition duration-200 ${primaryDark} opacity-60 hover:opacity-100`}
-                            onClick={togglePasswordVisibility}
-                        >
-                            {/* Icone do Olho */}
-                            {showPassword ? (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                            ) : (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.536-2.583m6.142 8.166A2.999 2.999 0 0012 15a3 3 0 00-3-3m3 3a3 3 0 003-3m-6 3l-4.5 4.5M21 12c-1.275 4.057-5.065 7-9.543 7a9.97 9.97 0 01-1.536-.183M10 12l-4.5 4.5m10-4.5L12 12m0 0l-4.5 4.5"></path>
-                                </svg>
-                            )}
-                        </span>
-                    </FloatingInput>
-                </div>
+  section: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#052242",
+    marginBottom: 10,
+  },
+  input: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 6,
+    height: 60,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: "#052242",
+    marginBottom: 15,
+  },
+  senhaContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  outerCircleSelecionado: {
+    borderColor: "#555",
+    backgroundColor: "#fff",
+    padding: 3,
+    borderRadius: 12,
+  },
 
+  innerCircle: {
+    width: 15,
+    height: 15,
+    borderRadius: 30,
+    backgroundColor: "#B1B1B1",
+  },
 
-                
-                <h3 className={`text-lg font-bold ${primaryDark} mb-3 mt-8`}>Dados pessoais</h3>
-                <FloatingInput label="Nome" name="name" value={formData.name} onChange={handleChange} isRequired />
-                <FloatingInput label="Sobrenome" name="surname" value={formData.surname} onChange={handleChange} isRequired />
-                <FloatingInput label="CPF" name="cpf" value={formData.cpf} onChange={handleChange} isRequired />
-                <FloatingInput label="Data de nascimento" name="birthDate" type="date" value={formData.birthDate} onChange={handleChange} isRequired />
-                <FloatingInput label="Telefone de contato" name="phone" type="tel" value={formData.phone} onChange={handleChange} isRequired />
+  generoTexto: {
+    fontSize: 15,
+    color: "#052242",
+    fontWeight: "bold",
+  },
+  olhoIcone: {
+    position: "absolute",
+    right: 15,
+  },
 
-                
-                <h3 className={`text-lg font-bold ${primaryDark} mb-3 mt-8`}>Gênero</h3>
-                <div className="flex space-x-8">
-                    <RadioOption 
-                        label="Masculino" 
-                        name="gender" 
-                        value="Masculino" 
-                        currentSelection={formData.gender} 
-                        onChange={handleChange} 
-                    />
-                    <RadioOption 
-                        label="Feminino" 
-                        name="gender" 
-                        value="Feminino" 
-                        currentSelection={formData.gender} 
-                        onChange={handleChange} 
-                    />
-                </div>
+  label: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#052242",
+    marginBottom: 8,
+  },
 
-                
-                <h3 className={`text-lg font-bold ${primaryDark} mb-3 mt-8`}>Endereço</h3>
-                <FloatingInput label="CEP" name="cep" value={formData.cep} onChange={handleChange} isRequired />
-                <FloatingInput label="Endereço" name="address" value={formData.address} onChange={handleChange} isRequired />
-                <FloatingInput label="Número" name="number" value={formData.number} onChange={handleChange} isRequired />
-                <FloatingInput label="Complemento (opcional)" name="complement" value={formData.complement} onChange={handleChange} />
-                <FloatingInput label="Bairro" name="neighborhood" value={formData.neighborhood} onChange={handleChange} isRequired />
-                <FloatingInput label="Cidade" name="city" value={formData.city} onChange={handleChange} isRequired />
-
-                
-                <FloatingSelect 
-                    label="Estado" 
-                    name="state" 
-                    value={formData.state} 
-                    onChange={handleChange} 
-                    isRequired 
-                    options={[
-                        { value: 'SP', label: 'São Paulo' },
-                        { value: 'RJ', label: 'Rio de Janeiro' },
-                        { value: 'MG', label: 'Minas Gerais' },
-                        { value: 'BA', label: 'Bahia' },
-                        // Adicionar mais estados conforme necessário
-                    ]}
-                />
-
-                <FloatingInput label="Ponto de referência (opcional)" name="referencePoint" value={formData.referencePoint} onChange={handleChange} />
-
-
-                
-                <div className="pt-8 pb-4">
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className={`w-full ${bgPrimaryDark} text-white font-bold py-4 rounded-xl shadow-lg hover:opacity-95 transition duration-300 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        {isLoading ? 'Cadastrando...' : 'Cadastrar'}
-                    </button>
-                </div>
-
-                
-                <div className="text-center text-xs pb-4">
-                    <p className="text-gray-600">
-                        Já possui cadastro? 
-                        <a href="#" onClick={() => setCurrentScreen && setCurrentScreen('login')} className={`${primaryDark} font-semibold hover:underline ml-1`}>Fazer login</a>
-                    </p>
-                </div>
-            </form>
-
-            
-            {message && (
-                <div className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 mb-8 p-3 ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white rounded-lg shadow-xl transition-all duration-300 ease-in-out`}>
-                    {message.text}
-                </div>
-            )}
-        </div>
-    );
-};
-
-export default RegistrationScreen;
+  generoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 40,
+    marginTop: 6,
+  },
+  radio: {
+    borderWidth: 1,
+    borderColor: "#aaa",
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 15,
+    backgroundColor: "#fff",
+  },
+  radioSelecionado: {
+    backgroundColor: "#dfeade",
+    borderColor: "#052242",
+  },
+  botao: {
+    backgroundColor: "#052242",
+    height: 60,
+    width: 250,
+    alignSelf: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    marginBottom: 100,
+  },
+  textoBotao: {
+    color: "#FFF",
+    textAlign: "center",
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+});

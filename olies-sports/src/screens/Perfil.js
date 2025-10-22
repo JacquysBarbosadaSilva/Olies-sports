@@ -104,7 +104,7 @@ export default function PerfilScreen({ navigation }) {
           <Text style={styles.saveButtonText}>Salvar alterações</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.exitButton}>
+        <TouchableOpacity style={styles.exitButton} onPress={() => navigation.navigate("Login")}>
           <Text style={styles.exitButtonText}>Sair</Text>
         </TouchableOpacity>
       </View>
