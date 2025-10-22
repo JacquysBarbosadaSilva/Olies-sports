@@ -17,6 +17,7 @@ import DetalhesProduto from "../screens/DetalhesProduto";
 import EditarEndereco from "../screens/EditarEndereco";
 import CadastrarEndereco from "../screens/CadastrarEndereco";
 import Comentarios from "../screens/Comentarios";
+import Carrinho from "../screens/Carrinho";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -34,6 +35,8 @@ function TabNavigator() {
             iconName = focused ? "person" : "person-outline";
           } else if (route.name === "Categorias") {
             iconName = focused ? "list" : "list-outline";
+          } else if (route.name === "Carrinho") {
+            iconName = focused ? "cart" : "cart-outline";
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -46,6 +49,8 @@ function TabNavigator() {
       <Tab.Screen name="Home" component={HomeScreen} />
 
       <Tab.Screen name="Categorias" component={Categorias} />
+
+      <Tab.Screen name="Carrinho" component={Carrinho} />
 
       <Tab.Screen name="Perfil" component={Perfil} />
     </Tab.Navigator>
