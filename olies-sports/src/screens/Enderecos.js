@@ -16,9 +16,10 @@ export default function PerfilScreen({ navigation }) {
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       {/* Cabeçalho */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color="#001f3f" />
-        </TouchableOpacity>
+       <TouchableOpacity onPress={() => navigation.navigate("Tabs", { screen: "Perfil" })}>
+        <Ionicons name="arrow-back" size={22} color="#001f3f" />
+      </TouchableOpacity>
+
         <Text style={styles.title}>Endereços</Text>
         <Image source={{uri: logoUrl}} style={styles.logo} />
       </View>
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     color: "#001f3f",
-    marginRight:100,
+    marginRight:120,
   },
   logo: {
     width: 70,

@@ -23,29 +23,29 @@ export default function PagamentoScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Cabeçalho */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Pagamento</Text>
-        <Image source={{uri: logoUrl}} style={styles.logo} />
-      </View>
 
-      {/* Resumo do pedido */}
       <View style={styles.resumo}>
         <Image
           source={{uri: produtoCategoria8Url}}
           style={styles.produto}
         />
         <View style={styles.detalhes}>
-          <Text style={styles.total}>Total: R$ 399,99</Text>
-          <Text>Camisa | Arsenal 25/26</Text>
-          <Text>Tamanho: L | Quantidade: 1</Text>
-          <Text>Entrega: Normal - <Text style={{color: "green"}}>Grátis</Text></Text>
+          <Text style={styles.total}>Total: R$ 479,90</Text>
+          <Text style={styles.tituloProduto}>Tênis QIX Missy Feat Urban Hiking Series Branco e Cinza</Text>
+          <Text style={styles.quantidadeProduto}>Tamanho: 42 | Quantidade: 1</Text>
+          <Text style={styles.entregaProduto}>Entrega: Normal - <Text style={{ color: "green" }}>Grátis</Text></Text>
         </View>
       </View>
 
       {/* Pagamento com Cartão de Crédito */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Pagar com cartão de crédito</Text>
+        <View style={styles.tituloCartao}>
+          <Image
+            source={require("../assets/icon-cartao.png")}
+            style={styles.iconCartao}
+          />
+          <Text style={styles.textCartao}>Pagar com cartão de crédito</Text>
+        </View>
 
         <TextInput
           placeholder="Número do cartão"
@@ -66,7 +66,7 @@ export default function PagamentoScreen() {
             style={styles.picker}
             onValueChange={(itemValue) => setMes(itemValue)}
           >
-            <Picker.Item label="Mês" value="" />
+            <Picker.Item label="Mês" value="" style={styles.input}/>
             {[...Array(12)].map((_, i) => (
               <Picker.Item key={i} label={`${i + 1}`} value={`${i + 1}`} />
             ))}
@@ -112,9 +112,14 @@ export default function PagamentoScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Pagamento com PIX */}
       <View style={styles.section}>
+        <View style={styles.pixPagamento}>
+        <Image
+            source={require("../assets/pix-icone.png")}
+            style={styles.iconPix}
+          />
         <Text style={styles.sectionTitle}>Pagar com PIX</Text>
+        </View>
         <Text style={styles.pixInfo}>
           Benefícios do Pix: Aprovação imediata{'\n\n'}
           Após a finalização do pedido, abra o app ou banco de sua preferência.
@@ -134,13 +139,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 15,
-    backgroundColor: "#f9f5f1",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
+    backgroundColor: "#F3ECE2",
   },
   title: {
     fontSize: 24,
@@ -169,6 +168,23 @@ const styles = StyleSheet.create({
   detalhes: {
     flex: 1,
     justifyContent: "space-between",
+  },
+  tituloCartao: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: 'center',
+  },
+  textCartao: {
+    fontWeight: "bold",
+    fontSize: 18,
+    marginBottom: 15,
+    color: "#1e2d3b",
+    marginLeft: -40,
+  },
+  iconCartao: {
+    height: 30,
+    width: 30,
+    marginBottom: 15,
   },
   total: {
     fontWeight: "bold",
@@ -205,6 +221,11 @@ const styles = StyleSheet.create({
     height: 50,
     marginBottom: 10,
     marginRight: 5,
+  },
+  pixPagamento: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: 'center',
   },
   button: {
     backgroundColor: "#1e2d3b",
