@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, View, Text } from "react-native";
+import { TouchableOpacity, View, Text, Image } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -83,17 +83,50 @@ function AppNavigation() {
           component={Pagamento}
           options={({ navigation }) => ({
             headerShown: true,
-            title: "Produtos",
+            title: "",
+            headerStyle: {
+              backgroundColor: "#F3ECE2",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 3,
+              elevation: 4,
+            },
             headerLeft: () => (
-              <Ionicons
-                name="arrow-back"
-                size={24}
-                style={{ marginLeft: 15 }}
+              <TouchableOpacity
                 onPress={() => navigation.goBack()}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginLeft: 15,
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="arrow-back" size={24} color="#052242" />
+                <Text
+                  style={{
+                    color: "#052242",
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    marginLeft: 5,
+                  }}
+                >
+                  Pagamento
+                </Text>
+              </TouchableOpacity>
+            ),
+            headerRight: () => (
+              <Image
+                source={require("../assets/logotipo.png")}
+                style={{
+                  width: 75,
+                  height: 75,
+                  marginRight: 15,
+                }}
+                resizeMode="contain"
               />
             ),
           })}
-          l
         />
 
         <Stack.Screen
