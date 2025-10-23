@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import {
   StyleSheet,
   View,
@@ -9,21 +9,15 @@ import {
   Pressable,
   Animated,
   ScrollView,
+  Alert,
 } from "react-native";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FavoritesContext } from "../context/FavoritesContext";
 
-const formatCurrency = (value) => {
-  return `R$ ${value
-    .toFixed(2)
-    .replace(".", ",")
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
-};
-
-const logoUrl =
-  "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4RCJUVETB%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T213109Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIF5r9n3SlIlwrWIih6WGQBbM0tGPsmu0u7PQwsqhz%2BPlAiEAzLnLGZ5HWc0lLBpQCkn8Ylt59i%2BhXca%2BCmKpOjpOQeIqgwMINxAAGgw2NzEwNTQ0OTczMzciDDFO1pKJNryxXbCVoyrgAmMmOaS%2BflOGH6QAoaH6tzhwkvCfOw1wekhWdxd6GUAlmfhHfXztqglXHvi2%2FQTpdwpgBqVFOX54Jr9tA%2FG%2BhCyO9tJQWvEGsSpNrutHIdNSftmozjutyzZYH6KLii%2BZaAP%2BCN3lYeN%2FB%2FJLvosSMsCPw7pxl6xzcYL4d6GTtqsKlK6Kcv%2BDODZWmZe3jPJKj1%2FjO%2B203fQN9Dtx1ggorUTAuKfTXzaCnYvkpRPCJ2F6052rKZnjND%2FGmyvflyFr7JnTgKF3HVI164zMpxtFN%2BspzP5UBHMui0wtJR7XtVQbr8rytz4f6DYoDmL4RVxX0uGr2%2BCK1b6tGzOiEdLBsgZ21Z0e4%2Fl%2FjG%2FuxejOUZfQwhJpHnY5kbMu1oyYUKvuKTsyAgktsLbNkMG1WuopiJXaQKj%2Fcl%2BH0x0KXYz3q8mttq8QUpqOmh9rnkc6DxEMGmIWHzB9rLtRvhN7uc9PWXQwgNzkxwY6hwKiJY9COGoIhCXtEd48aip89g9td2xbtd54Ojr2N4wznAW2oK1ufZ9OTiMIo8tuOL%2BUhJigtU3KxkJugU2JVjLAnDctb6AImhjY4ULdlqxP35%2FI3LHaM1t5Wiw7ltZ3laOJ0FsSDiNt693oroD3pSBxs%2B4R01ye3Ra62%2B7w7wkJxGLcPLOHraDS36OLrSQh4jOAjiOey%2BrKt7t6QaiJgFu4qRVWLA23wQzhYTMRNpTzaTzU26pewVPuRhE5y7X82XqNiNdum8vVwd2KO6ZHlOWxKDqhiOV4PnOoNYGuDj99HpOK6hE8UIThBdCQAshDTd6VKPUYsMEc%2FQZQWUvQHDSYA31Mc7nikQ%3D%3D&X-Amz-Signature=11eb26d8eb399b6d2f91c9721a92839350d8a784acefe0d988a547de57c03b6f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
+const logoUrl = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png";
 
 const INITIAL_CART_STATE = [];
 
@@ -32,6 +26,9 @@ const CartScreen = ({ navigation }) => {
   const [cartItems, setCartItems] = useState(INITIAL_CART_STATE);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [itemToRemove, setItemToRemove] = useState(null);
+
+  // Contexto de favoritos
+  const { favorites, addFavorite, removeFavorite } = useContext(FavoritesContext);
 
   useEffect(() => {
     if (route.params?.newItem) {
@@ -47,7 +44,7 @@ const CartScreen = ({ navigation }) => {
               : item
           );
         } else {
-          return [...prevItems, { ...newItem, quantity: 1, isFavorite: false }];
+          return [...prevItems, { ...newItem, quantity: 1 }];
         }
       });
 
@@ -55,12 +52,8 @@ const CartScreen = ({ navigation }) => {
     }
   }, [route.params?.newItem]);
 
-  const calculateTotal = () => {
-    return cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
-  };
+  const calculateTotal = () =>
+    cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
 
   const handleQuantityChange = (itemId, delta) => {
     setCartItems((prevItems) =>
@@ -90,23 +83,28 @@ const CartScreen = ({ navigation }) => {
     setItemToRemove(null);
   };
 
-  const handleFavoriteToggle = (itemId) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === itemId ? { ...item, isFavorite: !item.isFavorite } : item
-      )
-    );
-  };
-
-  const cartTotal = calculateTotal();
-  const itemCountText =
-    cartItems.length === 1 ? "1 item" : `${cartItems.length} itens`;
-
   const CartItem = ({ item }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
     const handleFavAnimation = () => {
-      handleFavoriteToggle(item.id);
+      const isFav = favorites.some((fav) => fav.id === item.id);
+
+      // Mapear corretamente para lista de desejos
+      const favoriteItem = {
+        id: item.id,
+        nome: item.name,
+        preco: item.price,
+        cor: item.cor || "Não definida",
+        imagemSource: item.image,
+      };
+
+      if (isFav) {
+        removeFavorite(item.id);
+      } else {
+        addFavorite(favoriteItem);
+      }
+
+      // animação do coração
       scaleAnim.setValue(0.8);
       Animated.spring(scaleAnim, {
         toValue: 1.2,
@@ -125,10 +123,8 @@ const CartScreen = ({ navigation }) => {
       try {
         const isLoggedIn = await AsyncStorage.getItem("userLoggedIn");
         if (isLoggedIn === "true") {
-          // Usuário logado, pode ir para a tela de pagamento
           navigation.navigate("Pagamento", { cartItems });
         } else {
-          // Usuário não logado, redireciona para login
           Alert.alert(
             "Atenção",
             "Você precisa estar logado para finalizar a compra.",
@@ -143,8 +139,9 @@ const CartScreen = ({ navigation }) => {
       }
     };
 
-    const heartIconName = item.isFavorite ? "heart" : "heart-outline";
-    const heartIconColor = item.isFavorite ? "#0a2540" : "#999";
+    const isFav = favorites.some((fav) => fav.id === item.id);
+    const heartIconName = isFav ? "heart" : "heart-outline";
+    const heartIconColor = isFav ? "#0a2540" : "#999";
 
     return (
       <View style={styles.cartItem}>
@@ -172,9 +169,9 @@ const CartScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
+          <Text style={styles.itemPrice}>{(item.price)}</Text>
           <Text style={styles.itemDescription}>{item.name}</Text>
-          <Text style={styles.itemInfo}>{item.installments}</Text>
+          <Text style={styles.itemInfo}>{item.cor}</Text>
 
           <View style={styles.quantityArea}>
             <View style={styles.quantityContainer}>
@@ -204,6 +201,10 @@ const CartScreen = ({ navigation }) => {
     );
   };
 
+  const cartTotal = calculateTotal();
+  const itemCountText =
+    cartItems.length === 1 ? "1 item" : `${cartItems.length} itens`;
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
@@ -223,9 +224,7 @@ const CartScreen = ({ navigation }) => {
               style={styles.continueShoppingButton}
               onPress={() => navigation.navigate("Home")}
             >
-              <Text style={styles.continueShoppingText}>
-                Continuar Comprando
-              </Text>
+              <Text style={styles.continueShoppingText}>Continuar Comprando</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -237,10 +236,11 @@ const CartScreen = ({ navigation }) => {
         <View style={styles.footerSummary}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Total</Text>
-            <Text style={styles.summaryTotal}>{formatCurrency(cartTotal)}</Text>
+            <Text style={styles.summaryTotal}>{(cartTotal)}</Text>
           </View>
-          <TouchableOpacity style={styles.checkoutButton}
-          onPress={() => navigation.navigate("Pagamento")}
+          <TouchableOpacity
+            style={styles.checkoutButton}
+            onPress={() => navigation.navigate("Pagamento")}
           >
             <Text style={styles.checkoutButtonText}>Finalizar compra</Text>
           </TouchableOpacity>

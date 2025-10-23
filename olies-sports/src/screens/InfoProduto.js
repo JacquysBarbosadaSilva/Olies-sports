@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useLayoutEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -9,20 +9,22 @@ import {
   Dimensions,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { FavoritesContext } from "../context/FavoritesContext";
 
 const { height } = Dimensions.get("window");
-
-// 🔹 Reduzindo para 50% para dar mais espaço ao infoContainer
 const CAROUSEL_HEIGHT_RATIO = 0.5;
 const ITEM_HEIGHT = height * CAROUSEL_HEIGHT_RATIO;
 
 export default function InfoProduto() {
   const navigation = useNavigation();
   const route = useRoute();
-  // Supondo que 'produto' é um objeto que contém 'nome', 'preco' e 'id'
   const { produto } = route.params;
+  const { addFavorite, removeFavorite, isFavorite } = useContext(FavoritesContext);
 
-  // 🔹 Grupos de imagens por cor
+  const [corSelecionada, setCorSelecionada] = useState("bege");
+  const [imagemAtual, setImagemAtual] = useState(0);
+
   const coresDisponiveis = {
     bege: [
       require("../assets/img/cor-produto1.png"),
@@ -36,38 +38,61 @@ export default function InfoProduto() {
     ],
   };
 
-  // 🔹 Cor padrão (ex: bege)
-  const [corSelecionada, setCorSelecionada] = useState("bege");
-  const [imagemAtual, setImagemAtual] = useState(0);
+  const imagens = coresDisponiveis[corSelecionada] || [];
+  const selectedImageSource = imagens.length > 0 ? imagens[0] : null;
+
+  const produtoIdUnique = `${produto.id}-${corSelecionada}`;
+  const favoritado = isFavorite(produtoIdUnique);
 
   const handleScroll = (event) => {
-    // Usa o ITEM_HEIGHT para cálculo preciso
     const index = Math.round(event.nativeEvent.contentOffset.y / ITEM_HEIGHT);
     setImagemAtual(index);
   };
 
-  // 🔹 Atualiza o carrossel quando troca a cor
-  const imagens = coresDisponiveis[corSelecionada] || [];
-  // Pega o source da primeira imagem para usar como thumbnail no carrinho
-  const selectedImageSource = imagens.length > 0 ? imagens[0] : null;
-
-  // 🌟 Lógica para Adicionar ao Carrinho e Navegar
-  const handleAddToCart = () => {
-    // 1. Criar o objeto do item do carrinho
-    const itemParaCarrinho = {
-      // ID ÚNICO que combina o produto e a cor
-      id: `${produto.id || Math.random().toString()}-${corSelecionada}`,
-      produtoId: produto.id || Math.random().toString(),
+  const toggleFavorite = () => {
+    const itemFavorito = {
+      id: produtoIdUnique,
+      produtoId: produto.id,
       nome: produto.nome,
       preco: produto.preco,
       cor: corSelecionada,
-      tamanho: "40", // Se houver estado para tamanho, use-o aqui
       quantidade: 1,
       imagemSource: selectedImageSource,
     };
 
-    // 2. CORREÇÃO DA NAVEGAÇÃO ANINHADA
-    // Navega para o Tab Navigator ("Tabs") e especifica a tela interna ("Carrinho")
+    if (favoritado) {
+      removeFavorite(produtoIdUnique);
+    } else {
+      addFavorite(itemFavorito);
+    }
+  };
+
+  // Adiciona botão de coração no header
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Ionicons
+          name={favoritado ? "heart" : "heart-outline"}
+          size={24}
+          color="#052242"
+          style={{ marginRight: 15 }}
+          onPress={toggleFavorite}
+        />
+      ),
+    });
+  }, [navigation, favoritado, corSelecionada]);
+
+  const handleAddToCart = () => {
+    const itemParaCarrinho = {
+      id: produtoIdUnique,
+      produtoId: produto.id,
+      nome: produto.nome,
+      preco: produto.preco,
+      cor: corSelecionada,
+      quantidade: 1,
+      imagemSource: selectedImageSource,
+    };
+
     navigation.navigate("Tabs", {
       screen: "Carrinho",
       params: { novoItem: itemParaCarrinho },
@@ -76,13 +101,11 @@ export default function InfoProduto() {
 
   return (
     <View style={styles.container}>
-      {/* Carrossel vertical */}
       <FlatList
         data={imagens}
-        contentContainerStyle={{ paddingTop: 50 }} // <- Isso cria o espaço visual
+        contentContainerStyle={{ paddingTop: 50 }}
         keyExtractor={(_, i) => i.toString()}
         renderItem={({ item }) => (
-          // Mantenha "contain" para ver a imagem inteira
           <Image source={item} style={styles.imagem} resizeMode="contain" />
         )}
         showsVerticalScrollIndicator={false}
@@ -93,7 +116,6 @@ export default function InfoProduto() {
         decelerationRate="normal"
       />
 
-      {/* Indicadores à direita */}
       <View style={styles.indicadores}>
         {imagens.map((_, index) => (
           <View
@@ -106,9 +128,7 @@ export default function InfoProduto() {
         ))}
       </View>
 
-      {/* Informações do Produto */}
       <View style={styles.infoContainer}>
-        {/* Botões de cor */}
         <View style={styles.coresContainer}>
           <TouchableOpacity
             style={[
@@ -121,7 +141,7 @@ export default function InfoProduto() {
           <TouchableOpacity
             style={[
               styles.circuloCor,
-              { backgroundColor: "#fff" }, // branco
+              { backgroundColor: "#fff" },
               corSelecionada === "branco" && styles.corSelecionada,
             ]}
             onPress={() => setCorSelecionada("branco")}
@@ -138,10 +158,7 @@ export default function InfoProduto() {
           <Text style={styles.textoBotaoDetalhes}>Detalhes do Produto</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.botaoCarrinho}
-          onPress={handleAddToCart}
-        >
+        <TouchableOpacity style={styles.botaoCarrinho} onPress={handleAddToCart}>
           <Text style={styles.textoBotaoCarrinho}>Adicionar ao Carrinho</Text>
         </TouchableOpacity>
       </View>
@@ -149,99 +166,21 @@ export default function InfoProduto() {
   );
 }
 
+// --- Estilos --- (mesmos do seu código)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-
-  imagem: {
-    width: "100%",
-    marginTop: 20,
-    height: height * CAROUSEL_HEIGHT_RATIO,
-  },
-
-  indicadores: {
-    position: "absolute",
-    right: 15,
-    // Posição ajustada para ser um pouco mais alta
-    top: "25%",
-  },
-
-  indicador: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#ccc",
-    marginVertical: 4,
-  },
-
-  indicadorAtivo: {
-    backgroundColor: "#000",
-  },
-
-  infoContainer: {
-    backgroundColor: "#f5efe5",
-    paddingVertical: 90,
-    paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderColor: "#ddd",
-  },
-
-  coresContainer: {
-    marginTop: -40,
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-
-  circuloCor: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: "#ccc",
-  },
-
-  corSelecionada: {
-    borderColor: "#001f3f",
-    borderWidth: 3,
-  },
-
-  nome: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    marginBottom: 8,
-  },
-
-  preco: {
-    fontSize: 18,
-    color: "#1a1a1a",
-    marginBottom: 16,
-  },
-
-  botaoDetalhes: {
-    backgroundColor: "#001f3f",
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-
-  botaoCarrinho: {
-    backgroundColor: "#fff",
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 20,
-  },
-
-  textoBotaoDetalhes: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-
-  textoBotaoCarrinho: {
-    color: "#001f3f",
-    fontSize: 16,
-    fontWeight: "500",
-  },
+  imagem: { width: "100%", marginTop: 20, height: height * CAROUSEL_HEIGHT_RATIO },
+  indicadores: { position: "absolute", right: 15, top: "25%" },
+  indicador: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#ccc", marginVertical: 4 },
+  indicadorAtivo: { backgroundColor: "#000" },
+  infoContainer: { backgroundColor: "#f5efe5", paddingVertical: 90, paddingHorizontal: 20, borderTopWidth: 1, borderColor: "#ddd" },
+  coresContainer: { marginTop: -40, flexDirection: "row", gap: 12, marginBottom: 16 },
+  circuloCor: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: "#ccc" },
+  corSelecionada: { borderColor: "#001f3f", borderWidth: 3 },
+  nome: { fontSize: 20, fontWeight: "600", color: "#1a1a1a", marginBottom: 8 },
+  preco: { fontSize: 18, color: "#1a1a1a", marginBottom: 16 },
+  botaoDetalhes: { backgroundColor: "#001f3f", paddingVertical: 14, borderRadius: 8, alignItems: "center" },
+  botaoCarrinho: { backgroundColor: "#fff", paddingVertical: 14, borderRadius: 8, alignItems: "center", marginTop: 20 },
+  textoBotaoDetalhes: { color: "#fff", fontSize: 16, fontWeight: "500" },
+  textoBotaoCarrinho: { color: "#001f3f", fontSize: 16, fontWeight: "500" },
 });
