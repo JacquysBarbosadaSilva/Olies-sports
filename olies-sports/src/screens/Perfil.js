@@ -8,25 +8,42 @@ import {
   ScrollView,
   Image,
   Alert,
+  Platform,
 } from "react-native";
 import { CommonActions } from "@react-navigation/native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
-const logoUrl =
-  "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4RCJUVETB%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T213109Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIF5r9n3SlIlwrWIih6WGQBbM0tGPsmu0u7PQwsqhz%2BPlAiEAzLnLGZ5HWc0lLBpQCkn8Ylt59i%2BhXca%2BCmKpOjpOQeIqgwMINxAAGgw2NzEwNTQ0OTczMzciDDFO1pKJNryxXbCVoyrgAmMmOaS%2BflOGH6QAoaH6tzhwkvCfOw1wekhWdxd6GUAlmfhHfXztqglXHvi2%2FQTpdwpgBqVFOX54Jr9tA%2FG%2BhCyO9tJQWvEGsSpNrutHIdNSftmozjutyzZYH6KLii%2BZaAP%2BCN3lYeN%2FB%2FJLvosSMsCPw7pxl6xzcYL4d6GTtqsKlK6Kcv%2BDODZWmZe3jPJKj1%2FjO%2B203fQN9Dtx1ggorUTAuKfTXzaCnYvkpRPCJ2F6052rKZnjND%2FGmyvflyFr7JnTgKF3HVI164zMpxtFN%2BspzP5UBHMui0wtJR7XtVQbr8rytz4f6DYoDmL4RVxX0uGr2%2BCK1b6tGzOiEdLBsgZ21Z0e4%2Fl%2FjG%2FuxejOUZfQwhJpHnY5kbMu1oyYUKvuKTsyAgktsLbNkMG1WuopiJXaQKj%2Fcl%2BH0x0KXYz3q8mttq8QUpqOmh9rnkc6DxEMGmIWHzB9rLtRvhN7uc9PWXQwgNzkxwY6hwKiJY9COGoIhCXtEd48aip89g9td2xbtd54Ojr2N4wznAW2oK1ufZ9OTiMIo8tuOL%2BUhJigtU3KxkJugU2JVjLAnDctb6AImhjY4ULdlqxP35%2FI3LHaM1t5Wiw7ltZ3laOJ0FsSDiNt693oroD3pSBxs%2B4R01ye3Ra62%2B7w7wkJxGLcPLOHraDS36OLrSQh4jOAjiOey%2BrKt7t6QaiJgFu4qRVWLA23wQzhYTMRNpTzaTzU26pewVPuRhE5y7X82XqNiNdum8vVwd2KO6ZHlOWxKDqhiOV4PnOoNYGuDj99HpOK6hE8UIThBdCQAshDTd6VKPUYsMEc%2FQZQWUvQHDSYA31Mc7nikQ%3D%3D&X-Amz-Signature=11eb26d8eb399b6d2f91c9721a92839350d8a784acefe0d988a547de57c03b6f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
+const logoUrl = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png";
+
+const sexosDisponiveis = ["Masculino", "Feminino", "Outro", "Prefiro não dizer"];
 
 export default function PerfilScreen({ navigation }) {
-  const [novoEmail, setNovoEmail] = useState("");
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
+  const [email] = useState("victorkoba08@gmail.com");
+
+  const [nome, setNome] = useState("");
+  const [sobrenome, setSobrenome] = useState("");
+  const [cpf] = useState("123.456.789-00");
+  const [sexo, setSexo] = useState("Masculino");
+  const [mostrarSexos, setMostrarSexos] = useState(false);
+
+  const [nascimento, setNascimento] = useState(new Date("2000-01-01"));
+  const [mostrarData, setMostrarData] = useState(false);
+  const [telefone, setTelefone] = useState("");
 
   const salvarAlteracoes = () => {
     Alert.alert("Sucesso", "Alterações salvas com sucesso!");
   };
 
+  const formatarData = (data) => {
+    return data.toLocaleDateString("pt-BR");
+  };
+
   return (
     <ScrollView style={styles.container}>
       {/* Cabeçalho */}
-      <View style={[styles.headerContainer]}>
+      <View style={styles.headerContainer}>
         <Text style={styles.titulo}>Perfil</Text>
         <Image source={{ uri: logoUrl }} style={styles.logo} />
       </View>
@@ -36,55 +53,129 @@ export default function PerfilScreen({ navigation }) {
       <View style={styles.content}>
         <Text style={styles.greeting}>Olá Victor!</Text>
 
-        {/* Menu */}
-        <View style={styles.menu}>
-          {/* <TouchableOpacity onPress={() => navigation.navigate("Pedidos")}>
-          <View style={styles.menuItem}>
-            <Image
-              source={require("../assets/icone-caixa.png")}
-              style={styles.menuIcon}
-            />
-            <Text style={styles.menuText}>Pedidos</Text>
-          </View>
-          </TouchableOpacity> */}
-{/* 
-          <View style={styles.menuItem}>
-            <Image
-              source={require("../assets/icone-user.png")}
-              style={styles.menuIcon}
-            />
-            <Text style={styles.menuText}>Alterar dados pessoais</Text>
-          </View> */}
-
+        {/* Botões lado a lado */}
+        <View style={styles.menuRow}>
+          {/* Gerenciar Endereços */}
           <TouchableOpacity
-            style={styles.menuItem}
+            style={styles.menuButton}
             onPress={() => navigation.navigate("Enderecos")}
           >
-            <Image
-              source={require("../assets/emoji-casa.png")}
-              style={styles.menuIcon}
-            />
-            <Text style={styles.menuText}>Endereços</Text>
+            <View style={styles.menuButtonContent}>
+              <Image
+                source={require("../assets/emoji-casa.png")}
+                style={styles.menuIcon}
+              />
+              <Text style={styles.menuButtonText}>Gerenciar{"\n"}Endereços</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Visualizar Pedidos */}
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => navigation.navigate("Pedidos")}
+          >
+            <View style={styles.menuButtonContent}>
+              <Image
+                source={require("../assets/emoji-casa.png")}
+                style={styles.menuIcon}
+              />
+              <Text style={styles.menuButtonText}>Visualizar{"\n"}Pedidos</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
-        {/* Alterar email */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>E-mail</Text>
+        {/* Card de Informações Pessoais */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitulo}>Informações Pessoais</Text>
+
           <TextInput
-            style={styles.inputDisabled}
-            value="victorkoba08@gmail.com"
-            editable={false}
+            style={styles.input}
+            placeholder="Nome"
+            placeholderTextColor="#888"
+            value={nome}
+            onChangeText={setNome}
           />
-          <Text style={styles.sectionDica}>O e-mail não pode ser alterado</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Sobrenome"
+            placeholderTextColor="#888"
+            value={sobrenome}
+            onChangeText={setSobrenome}
+          />
+          <TextInput style={styles.inputDisabled} value={cpf} editable={false} />
+          <Text style={styles.sectionDicaAviso}>
+            Este campo não pode ser alterado
+          </Text>
+
+          {/* Seletor de Sexo */}
+          <TouchableOpacity
+            style={styles.input}
+            onPress={() => setMostrarSexos(!mostrarSexos)}
+          >
+            <Text>{sexo}</Text>
+          </TouchableOpacity>
+          {mostrarSexos &&
+            sexosDisponiveis.map((opcao) => (
+              <TouchableOpacity
+                key={opcao}
+                style={styles.opcao}
+                onPress={() => {
+                  setSexo(opcao);
+                  setMostrarSexos(false);
+                }}
+              >
+                <Text style={styles.opcaoTexto}>{opcao}</Text>
+              </TouchableOpacity>
+            ))}
+
+          {/* Seletor de Data */}
+          <TouchableOpacity
+            style={styles.input}
+            onPress={() => setMostrarData(true)}
+          >
+            <Text style={styles.inputText}>{formatarData(nascimento)}</Text>
+          </TouchableOpacity>
+
+          {mostrarData && (
+            <DateTimePicker
+              value={nascimento}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(event, selectedDate) => {
+                if (event.type === "set" && selectedDate) {
+                  setNascimento(selectedDate);
+                }
+                setMostrarData(false);
+              }}
+              maximumDate={new Date()}
+            />
+          )}
+
+          <TextInput
+            style={styles.input}
+            placeholder="Telefone"
+            placeholderTextColor="#888"
+            value={telefone}
+            onChangeText={setTelefone}
+            keyboardType="phone-pad"
+          />
         </View>
 
-        {/* Alterar senha */}
-        <View style={styles.section}>
+        {/* Card de Senha e E-mail */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitulo}>Informações de Cadastro</Text>
+
+          <Text style={styles.sectionTitle}>E-mail</Text>
+          <TextInput style={styles.inputDisabled} value={email} editable={false} />
+          <Text style={styles.sectionDicaAviso}>
+            Este campo não pode ser alterado
+          </Text>
+
           <Text style={styles.sectionTitle}>Alterar senha</Text>
           <TextInput
             style={styles.input}
             placeholder="Senha atual"
+            placeholderTextColor="#888"
             secureTextEntry
             autoCapitalize="none"
             value={senhaAtual}
@@ -93,6 +184,7 @@ export default function PerfilScreen({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="Nova senha"
+            placeholderTextColor="#888"
             secureTextEntry
             autoCapitalize="none"
             value={novaSenha}
@@ -129,15 +221,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3ECE2",
     paddingTop: 40,
   },
-  scrollContent: {
-    paddingBottom: 40,
-  },
   logo: {
     width: 77,
     height: 40,
     marginLeft: 10,
   },
-
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -145,14 +233,22 @@ const styles = StyleSheet.create({
     height: 92,
     paddingHorizontal: 20,
   },
-
   titulo: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#052242",
     marginBottom: 12,
   },
-
+  shadowLine: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+    borderBottomWidth: 0.8,
+    marginBottom: 20,
+    borderBottomColor: "#00000025",
+  },
   content: {
     padding: 20,
   },
@@ -161,35 +257,63 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontWeight: "500",
   },
-  menu: {
-    marginBottom: 30,
-  },
-  menuItem: {
+
+  /* --- Botões lado a lado --- */
+  menuRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    gap: 10,
+  },
+  menuButton: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 15,
     alignItems: "center",
-    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  menuButtonContent: {
+    alignItems: "center",
   },
   menuIcon: {
-    width: 20,
+    width: 30,
     height: 30,
-    marginRight: 10,
+    marginBottom: 5,
     resizeMode: "contain",
   },
-  menuText: {
-    fontSize: 16,
+  menuButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#001f3f",
+    textAlign: "center",
   },
-  section: {
+
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardTitulo: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+    color: "#052242",
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 8,
-  },
-  sectionDica: {
-    fontSize: 14,
-    color: "#666",
-    fontStyle: "italic",
   },
   input: {
     borderWidth: 1,
@@ -200,6 +324,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "#fff",
     height: 60,
+    justifyContent: "center",
   },
   inputDisabled: {
     borderWidth: 1,
@@ -212,6 +337,16 @@ const styles = StyleSheet.create({
     color: "#999",
     height: 60,
   },
+  opcao: {
+    padding: 10,
+    backgroundColor: "#eee",
+    borderRadius: 6,
+    marginBottom: 5,
+  },
+  opcaoTexto: {
+    fontSize: 15,
+    color: "#333",
+  },
   saveButton: {
     backgroundColor: "#001f3f",
     padding: 12,
@@ -221,7 +356,6 @@ const styles = StyleSheet.create({
     width: 250,
     alignSelf: "center",
   },
-
   saveButtonText: {
     color: "#fff",
     fontWeight: "bold",
@@ -234,26 +368,24 @@ const styles = StyleSheet.create({
     padding: 7,
     borderRadius: 6,
     alignItems: "center",
-    width: "50%",
     alignSelf: "center",
     marginTop: 20,
     width: 100,
   },
   exitButtonText: {
     fontSize: 15,
-    width: "100%",
     textAlign: "center",
     color: "#555",
   },
-
-  shadowLine: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
-    borderBottomWidth: 0.8,
-    marginBottom: 20,
-    borderBottomColor: "#00000025",
+  sectionDicaAviso: {
+    fontSize: 13,
+    color: "#7a7a7aff",
+    fontStyle: "italic",
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  inputText: {
+    fontSize: 15,
+    color: "#333",
   },
 });
