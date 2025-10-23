@@ -8,9 +8,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LOGO_URL =
   "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4RCJUVETB%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T213109Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIF5r9n3SlIlwrWIih6WGQBbM0tGPsmu0u7PQwsqhz%2BPlAiEAzLnLGZ5HWc0lLBpQCkn8Ylt59i%2BhXca%2BCmKpOjpOQeIqgwMINxAAGgw2NzEwNTQ0OTczMzciDDFO1pKJNryxXbCVoyrgAmMmOaS%2BflOGH6QAoaH6tzhwkvCfOw1wekhWdxd6GUAlmfhHfXztqglXHvi2%2FQTpdwpgBqVFOX54Jr9tA%2FG%2BhCyO9tJQWvEGsSpNrutHIdNSftmozjutyzZYH6KLii%2BZaAP%2BCN3lYeN%2FB%2FJLvosSMsCPw7pxl6xzcYL4d6GTtqsKlK6Kcv%2BDODZWmZe3jPJKj1%2FjO%2B203fQN9Dtx1ggorUTAuKfTXzaCnYvkpRPCJ2F6052rKZnjND%2FGmyvflyFr7JnTgKF3HVI164zMpxtFN%2BspzP5UBHMui0wtJR7XtVQbr8rytz4f6DYoDmL4RVxX0uGr2%2BCK1b6tGzOiEdLBsgZ21Z0e4%2Fl%2FjG%2FuxejOUZfQwhJpHnY5kbMu1oyYUKvuKTsyAgktsLbNkMG1WuopiJXaQKj%2Fcl%2BH0x0KXYz3q8mttq8QUpqOmh9rnkc6DxEMGmIWHzB9rLtRvhN7uc9PWXQwgNzkxwY6hwKiJY9COGoIhCXtEd48aip89g9td2xbtd54Ojr2N4wznAW2oK1ufZ9OTiMIo8tuOL%2BUhJigtU3KxkJugU2JVjLAnDctb6AImhjY4ULdlqxP35%2FI3LHaM1t5Wiw7ltZ3laOJ0FsSDiNt693oroD3pSBxs%2B4R01ye3Ra62%2B7w7wkJxGLcPLOHraDS36OLrSQh4jOAjiOey%2BrKt7t6QaiJgFu4qRVWLA23wQzhYTMRNpTzaTzU26pewVPuRhE5y7X82XqNiNdum8vVwd2KO6ZHlOWxKDqhiOV4PnOoNYGuDj99HpOK6hE8UIThBdCQAshDTd6VKPUYsMEc%2FQZQWUvQHDSYA31Mc7nikQ%3D%3D&X-Amz-Signature=11eb26d8eb399b6d2f91c9721a92839350d8a784acefe0d988a547de57c03b6f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
@@ -25,28 +29,39 @@ const COLORS = {
 // Componente principal de Login
 const Login = () => {
   const navigation = useNavigation();
-  const [email, setEmail] = useState("victorkoba08@gmail.com");
-  const [password, setPassword] = useState("***********");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
   // No React Native, não há 'e.preventDefault()'
-  const handleLogin = () => {
-    setIsLoading(true);
-    setMessage(null);
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Erro", "Preencha todos os campos!");
+      return;
+    }
 
-    // Simulação de delay/chamada de API
-    setTimeout(() => {
-      // Usamos Alert para mostrar a mensagem, que é o padrão em RN para feedback rápido.
-      Alert.alert("Sucesso", "Login efetuado com sucesso!");
-      setMessage({ type: "success", text: "Login efetuado com sucesso!" });
-      setTimeout(() => {
-        setIsLoading(false);
-        setMessage(null);
-        // Aqui você faria a navegação para a tela principal
-      }, 2000);
-    }, 2000);
+    try {
+      const usuarioSalvo = await AsyncStorage.getItem("usuario");
+      if (!usuarioSalvo) {
+        Alert.alert("Erro", "Usuário não cadastrado!");
+        return;
+      }
+
+      const usuario = JSON.parse(usuarioSalvo);
+
+      // Comparando com o objeto salvo
+      if (usuario.email === email && usuario.senha === password) {
+        Alert.alert("Sucesso", "Login realizado com sucesso!");
+        navigation.navigate("Tabs", { screen: "HomeScreen" });
+      } else {
+        Alert.alert("Erro", "Email ou senha incorretos!");
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Erro", "Ocorreu um erro no login.");
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -54,112 +69,99 @@ const Login = () => {
   };
 
   return (
-    // View principal para centralizar o conteúdo
-    <View style={styles.container}>
-      {/* Card de Login */}
-      <View style={styles.card}>
-        {/* Logo e Título */}
-        <View style={styles.header}>
-          <Image
-            source={{ uri: LOGO_URL }}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Subtítulo */}
-        <Text style={[styles.subtitle, styles.fontKantumruySemiBold]}>
-          Entre na{"\n"}sua conta
-        </Text>
-
-        {/* Formulário (representado por uma View) */}
-        <View style={styles.form}>
-          {/* Campo Email */}
-          <View>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="seuemail@exemplo.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!isLoading}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: "#F3ECE2" }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+    >
+      <View style={styles.container}>
+        <View style={styles.card}>
+          <View style={styles.header}>
+            <Image
+              source={{ uri: LOGO_URL }}
+              style={styles.logo}
+              resizeMode="contain"
             />
           </View>
 
-          {/* Campo Senha */}
-          <View>
-            <Text style={styles.label}>Senha</Text>
-            <View style={styles.passwordContainer}>
+          <Text style={[styles.subtitle, styles.fontKantumruySemiBold]}>
+            Entre na{"\n"}sua conta
+          </Text>
+
+          <View style={styles.form}>
+            <View>
+              <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="***********"
-                secureTextEntry={!showPassword}
-                editable={!isLoading}
+                placeholder="Email"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
               />
-              {/* Botão de Toggle de Senha (TouchableOpacity) */}
-              <TouchableOpacity
-                onPress={togglePasswordVisibility}
-                style={styles.passwordToggle}
-                disabled={isLoading}
-              >
-                <Feather
-                  name={showPassword ? "eye" : "eye-off"}
-                  size={20}
-                  color={COLORS.primaryDark}
-                  style={{ opacity: 0.6 }}
+            </View>
+
+            <View>
+              <Text style={styles.label}>Senha</Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Senha"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
                 />
+                <TouchableOpacity
+                  onPress={togglePasswordVisibility}
+                  style={styles.passwordToggle}
+                  disabled={isLoading}
+                >
+                  <Feather
+                    name={showPassword ? "eye" : "eye-off"}
+                    size={20}
+                    color="#052242"
+                    style={{ opacity: 0.6 }}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.linksContainer}>
+              <Text style={styles.linkText}>
+                Não possue cadastro?{" "}
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("Cadastro")}
+                >
+                  <Text style={styles.link}>Clique aqui</Text>
+                </TouchableOpacity>
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => navigation.navigate("RedefinirSenha")}
+              >
+                <Text style={[styles.linkText, styles.linkTextRedefinir]}>
+                  Esqueceu sua senha?
+                </Text>
               </TouchableOpacity>
             </View>
-          </View>
 
-          {/* Links de Auxílio */}
-          <View style={styles.linksContainer}>
-            <Text style={styles.linkText}>
-              Não possue cadastro? {/* Link de Cadastro */}
-              <TouchableOpacity onPress={() => navigation.navigate("Cadastro")}>
-                <Text style={styles.link}>Clique aqui</Text>
-              </TouchableOpacity>
-            </Text>
-
-            {/* Link de Esqueci a Senha */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate("RedefinirSenha")}
-            >
-              <Text style={[styles.linkText, styles.linkTextRedefinir]}>Esqueceu sua senha?</Text>
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+              <Text style={styles.buttonText}>Entrar</Text>
             </TouchableOpacity>
           </View>
+        </View>
 
-          {/* Botão de Entrar */}
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={isLoading}
+        {message && (
+          <View
+            style={[
+              styles.messageBox,
+              message.type === "success" ? styles.successBg : styles.errorBg,
+            ]}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.buttonText}>Entrar</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+            <Text style={styles.messageText}>{message.text}</Text>
+          </View>
+        )}
       </View>
-
-      {/* Mensagem de Feedback (Exemplo de um Toast ou Modal simples) */}
-      {message && (
-        <View
-          style={[
-            styles.messageBox,
-            message.type === "success" ? styles.successBg : styles.errorBg,
-          ]}
-        >
-          <Text style={styles.messageText}>{message.text}</Text>
-        </View>
-      )}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -232,7 +234,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12, // p-3 (vertical)
     paddingHorizontal: 16, // p-3 (horizontal)
     borderRadius: 12, // rounded-xl
-    backgroundColor: COLORS.inputBg,
+    backgroundColor: "#fff",
     color: COLORS.inputColor,
     fontSize: 16, // text-base
     fontWeight: "500", // font-medium
@@ -247,11 +249,10 @@ const styles = StyleSheet.create({
     color: "#4B5563", // text-gray-600
     flexDirection: "row",
     flexWrap: "wrap",
-
   },
 
   linkTextRedefinir: {
-    textDecorationLine:"underline",
+    textDecorationLine: "underline",
   },
 
   link: {
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   successBg: {
-    backgroundColor: "#10B981", // bg-green-500
+    backgroundColor: "#052242", // bg-green-500
   },
   errorBg: {
     backgroundColor: "#EF4444", // bg-red-500 (Não usado, mas bom para ter)

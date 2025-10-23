@@ -20,8 +20,10 @@ import Comentarios from "../screens/Comentarios";
 import Carrinho from "../screens/Carrinho";
 import Login from "../screens/Login";
 import Cadastro from "../screens/Cadastro";
+import RedefinirSenha from "../screens/RedefinirSenha";
 
-const logoUrl = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4RCJUVETB%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T213109Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIF5r9n3SlIlwrWIih6WGQBbM0tGPsmu0u7PQwsqhz%2BPlAiEAzLnLGZ5HWc0lLBpQCkn8Ylt59i%2BhXca%2BCmKpOjpOQeIqgwMINxAAGgw2NzEwNTQ0OTczMzciDDFO1pKJNryxXbCVoyrgAmMmOaS%2BflOGH6QAoaH6tzhwkvCfOw1wekhWdxd6GUAlmfhHfXztqglXHvi2%2FQTpdwpgBqVFOX54Jr9tA%2FG%2BhCyO9tJQWvEGsSpNrutHIdNSftmozjutyzZYH6KLii%2BZaAP%2BCN3lYeN%2FB%2FJLvosSMsCPw7pxl6xzcYL4d6GTtqsKlK6Kcv%2BDODZWmZe3jPJKj1%2FjO%2B203fQN9Dtx1ggorUTAuKfTXzaCnYvkpRPCJ2F6052rKZnjND%2FGmyvflyFr7JnTgKF3HVI164zMpxtFN%2BspzP5UBHMui0wtJR7XtVQbr8rytz4f6DYoDmL4RVxX0uGr2%2BCK1b6tGzOiEdLBsgZ21Z0e4%2Fl%2FjG%2FuxejOUZfQwhJpHnY5kbMu1oyYUKvuKTsyAgktsLbNkMG1WuopiJXaQKj%2Fcl%2BH0x0KXYz3q8mttq8QUpqOmh9rnkc6DxEMGmIWHzB9rLtRvhN7uc9PWXQwgNzkxwY6hwKiJY9COGoIhCXtEd48aip89g9td2xbtd54Ojr2N4wznAW2oK1ufZ9OTiMIo8tuOL%2BUhJigtU3KxkJugU2JVjLAnDctb6AImhjY4ULdlqxP35%2FI3LHaM1t5Wiw7ltZ3laOJ0FsSDiNt693oroD3pSBxs%2B4R01ye3Ra62%2B7w7wkJxGLcPLOHraDS36OLrSQh4jOAjiOey%2BrKt7t6QaiJgFu4qRVWLA23wQzhYTMRNpTzaTzU26pewVPuRhE5y7X82XqNiNdum8vVwd2KO6ZHlOWxKDqhiOV4PnOoNYGuDj99HpOK6hE8UIThBdCQAshDTd6VKPUYsMEc%2FQZQWUvQHDSYA31Mc7nikQ%3D%3D&X-Amz-Signature=11eb26d8eb399b6d2f91c9721a92839350d8a784acefe0d988a547de57c03b6f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
+const logo =
+  "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4734NIBZV%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T235611Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEID%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIGvmmEbnoo8A5Fdf8W2j18XJW5qtr3gOl6OBDNDfiwpWAiEAwC%2BzlALsTuK3suf8HIFQMeLVuRQ5RktuUvqmb5DYzOYqgwMIORAAGgw2NzEwNTQ0OTczMzciDD4fTZLRXeWJOM%2FkqSrgAoN1eRCYZ77Yng%2BFeCSKuuMSSrydPsdD6njlM0bRekayD4NA4U9tVPhK4oILw%2BIcF7JisLgQWEVNgO99q2j4XmG9wr7Hb%2BS44bDY95g6vVp8%2BYrtcEW64TFeeMAGLRvZS7o86JODie5Ny44hjLc6BwQipHrNthk8acbmXXbcJhAMSeyESGVO3kPXoRVm%2BD%2F2PpQStUZ%2B3NtoqzhpB2QodSFvDFPf04jX%2FNglb71k0Tm4ONuI4MMPER5VIM0T8rLWvXu45TP57adERC5s6mrNdLZS17stW6jL871ztuR0RKKlFXb1bYidZn6UD93CjESnTWFhOZ5CO9b3RXmvd0gA458byssMpWkLv6VTpiihTNqBPsH5Pa7bjNAazLxh10XL8zJaBpEpsb%2Btz68U4WoLva9VIsXrAMjOpxtKT%2FXiTJTt57%2BAMm5ZZfz%2FZuOoQkq2DqdzB3OCoZdUaH3twl95oA0wztzlxwY6hwKAY%2Bh%2FeqjRDrz%2FV9WrYRZ7M6wxVtxV6OcMYiREbFWxNASvDMH5G%2BHSKn%2FpOS3rLsf41BNaEb%2B%2Ft%2Bhs3wPo3JM%2FhwpFB4iqqtk19DxYd0QV5yF90%2Fsbtmf%2BuvL8U562tjiIi3ksIl%2BYPdnQWHe2Dn0SLtiGwZKz9koREiBi0fH%2BTidrBx5ODF49xQjkv%2Fu1tSueUCwJpZnHPP6QZO2N1Nld9ryupVyE0jMzwUMNyRqHTv5%2BI8R17rddobFkjLsQWTdU9UByaHQKVCcUgKand5sBpWa9ZbCPVxG65VKaS2RngWz%2FJLl%2FyKRDgwSnDO5kBw8moUe5GDC1vxFWFceyL8lJoJHFnu6SvQ%3D%3D&X-Amz-Signature=c99b628c851bdc3a16c6821edb1ef5bca6c456f85c6e57f8060a30b8f1f4740f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -123,8 +125,15 @@ function AppNavigation() {
               </TouchableOpacity>
             ),
             headerRight: () => (
-              <Image source={{ uri: logoUrl }} />
-
+              <Image
+                source={{ uri: logo }}
+                style={{
+                  width: 75,
+                  height: 75,
+                  marginRight: 15,
+                }}
+                resizeMode="contain"
+              />
             ),
           })}
         />
@@ -295,8 +304,16 @@ function AppNavigation() {
             title: "Cadastro",
           }}
         />
-      </Stack.Navigator>
 
+        <Stack.Screen
+          name="RedefinirSenha"
+          component={RedefinirSenha}
+          options={{
+            headerShown: false,
+            title: "RedefinirSenha",
+          }}
+        />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
