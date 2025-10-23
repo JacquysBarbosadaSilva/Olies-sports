@@ -215,7 +215,9 @@ const CartScreen = ({ navigation }) => {
             <Text style={styles.summaryLabel}>Total</Text>
             <Text style={styles.summaryTotal}>{formatCurrency(cartTotal)}</Text>
           </View>
-          <TouchableOpacity style={styles.checkoutButton}>
+          <TouchableOpacity style={styles.checkoutButton}
+          onPress={() => navigation.navigate("Pagamento")}
+          >
             <Text style={styles.checkoutButtonText}>Finalizar compra</Text>
           </TouchableOpacity>
         </View>

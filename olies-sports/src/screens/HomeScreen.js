@@ -145,7 +145,7 @@ export default function HomeScreen({ navigation }) {
         />
         <Image source={{uri: logoUrl}} style={styles.logo} />
       </View>
-      <TouchableOpacity onPress={() => navigation.navigate("Pagamento")}>
+      <TouchableOpacity onPress={() => navigation.navigate("ListaDesejos")}>
         <View style={styles.banner}>
           <Image
             source={require("../assets/banner-promocao.jpg")}
