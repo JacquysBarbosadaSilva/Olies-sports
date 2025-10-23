@@ -38,6 +38,7 @@ export default function PerfilScreen({ navigation }) {
 
         {/* Menu */}
         <View style={styles.menu}>
+          {/* <TouchableOpacity onPress={() => navigation.navigate("Pedidos")}>
           <View style={styles.menuItem}>
             <Image
               source={require("../assets/icone-caixa.png")}
@@ -45,14 +46,15 @@ export default function PerfilScreen({ navigation }) {
             />
             <Text style={styles.menuText}>Pedidos</Text>
           </View>
-
+          </TouchableOpacity> */}
+{/* 
           <View style={styles.menuItem}>
             <Image
               source={require("../assets/icone-user.png")}
               style={styles.menuIcon}
             />
             <Text style={styles.menuText}>Alterar dados pessoais</Text>
-          </View>
+          </View> */}
 
           <TouchableOpacity
             style={styles.menuItem}
