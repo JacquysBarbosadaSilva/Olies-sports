@@ -8,7 +8,7 @@ const initialProducts = [
     {
         id: "p1",
         name: "Smartband Samsung Galaxy Fit3 Grafite",
-        price: 299.0,
+        price: 289.99,
         installments: "ou 2x de R$ 149,50",
         discount: "-30% OFF",
         image: require("../assets/imagem-produto1.jpg"),
