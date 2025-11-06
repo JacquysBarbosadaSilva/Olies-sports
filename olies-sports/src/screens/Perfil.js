@@ -76,7 +76,7 @@ export default function PerfilScreen({ navigation }) {
           >
             <View style={styles.menuButtonContent}>
               <Image
-                source={require("../assets/emoji-casa.png")}
+                source={require("../assets/icone-caixa.png")}
                 style={styles.menuIcon}
               />
               <Text style={styles.menuButtonText}>Visualizar{"\n"}Pedidos</Text>
