@@ -8,10 +8,11 @@ import {
   ScrollView,
   Image,
   Alert,
-  Platform,
+  Platform
 } from "react-native";
 import { CommonActions } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const logoUrl = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png";
 
@@ -42,6 +43,7 @@ export default function PerfilScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#F3ECE2" }}>
       {/* Cabeçalho */}
       <View style={styles.headerContainer}>
         <Text style={styles.titulo}>Perfil</Text>
@@ -211,6 +213,7 @@ export default function PerfilScreen({ navigation }) {
           <Text style={styles.exitButtonText}>Sair</Text>
         </TouchableOpacity>
       </View>
+    </SafeAreaView>
     </ScrollView>
   );
 }

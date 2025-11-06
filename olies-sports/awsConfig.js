@@ -1,12 +1,16 @@
 // awsConfig.js
-const AWS = require('aws-sdk');
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
-// Configuração básica com credenciais
-AWS.config.update({
-  accessKeyId: process.env.ASIA47CR2TTEEZWVRK3N,
-  secretAccessKey: process.env.BdXqQ23hMa2cmIqp2+cDeWGQtIaidi+wOAS7QcMz,
-  awssessiontoken: process.env.IQoJb3JpZ2luX2VjEKH,//////////wEaCXVzLXdlc3QtMiJHMEUCICbDS76rW2ucs2ktIUJdvNjKstPwuk5bIUWSkl2sIfkFAiEAwkkMQK8+YDF8Q5cfj1gqhBvX9OX/idHUzOg1Hm8HMnUqrwIIGhAAGgw4OTEzNzczMjczMDQiDDKs0Vme5PRwJgOzaiqMAuk1UB5EFuj+yShvF65U1wPy+t74w06xMbwZXMmmwpqDYNgZRa8I+tE+HjIkoNptG6cFCCL9Fl1x8AjBbbfl8OypIb7rs5B4B2F2YY6n4Bp8YP6TR/6IDlqb3eK8QbeIXAhwbp3gz2pxUA0Ru6VslmVAhUfxxtsf5uwn3RGHJna6Aj3qI9DK1tqi7c0+shIIJ69l39PruqoaL6NPAMrMa3ifXKqFD5Ma/KU4TC4EX2H1Rkrpd4GsQJqUdP9Ylxdn6VNzKnY3FPTtJQMzpjLJdCtdf2Fn+2zPuGbZ5DDCHh2ESTeyDPSJ/mdAKCGVKeBihNKNSHlaTfd2NdikX9MV793e9njsf9tQRrEMcHEwlPyLxgY6nQH59Jxtx37ndnTVZYdf1Bwa/1hWWCNtaxZv8N1A25Lsc/DPa0ubkLfGzTKQ2qY/BM1KawlmwWE7sFRM37KDAf+R0BgfQkc+TjYcF5AoxH/OtFeX54E9fbXMXnO6tAZo62eg9sAVlCEMmUrLSh5LB3gHHaOv8mUHhKtyvFPJvrUvWO0UR7SOUw3RD+beI/bE0crXdT5MoflFFFhHdd3F
-  region: process.env.AWS_REGION || 'us-east-1'
+const dynamoDBClient = new DynamoDBClient({
+  region: "us-east-1", // Substitua se sua região for diferente
+  credentials: {
+    accessKeyId: "ASIAZYPPXAY4WMSIA6Z5",
+    secretAccessKey: "3rVMdyoDI3eEoy/Qrw5QUppNcRC5ot0e8jf4ity3",
+    sessionToken: "IQoJb3JpZ2luX2VjENv//////////wEaCXVzLXdlc3QtMiJGMEQCIH0poaBEthkzrI3HAHtjrnxWVwwfMF2OJ8NpaaVMUaW1AiBA+AN5eGf/2IeHqABf/02xE7Q2ecUwP5dH2B2Fi6O8VyrBAgik//////////8BEAAaDDY3MTA1NDQ5NzMzNyIMuKOEkVRet9SmKipPKpUCXlkjeWh7fDipcQ1AI5+123oGTeBZ/lVNHn16wWgGN5o46KYkGyFvRNViBIEOjzmYjybM2R+zB9MmcDjFU6wsSHPgSKYDSxXsTm8ADIUCF6jJ9v9n18e6RghCVMgvn7O6nBXSWrcLHn0vMa2jExxq10qHkox5WLUBwJ5mVAjK/fcFR0k9eg/Z1QMlECfR4rNiHYlRE4L+BqFHRNKqB9Td96hOshSjyRL1vZH7t+itoeo0gWoXYKB82ay+kjfDTXrqUWhwgC1doCch//8gRcGZUY7dHMb1N9c1s2GyhoVSEt/0mMK4g62mGQNl4OYYu6nTbandiJ1fSZc0axPUydgVqbh+L5tQHVZCK+ev3L3CXViUMjKBujCzh7LIBjqeARnYRPGawUmVTXiJ23oWDV53Jv16QVHkm4/YsZit+xJ6qs4ZoHI07HLRMWiRtgGYIbYtey4hFXE75sqzmqCPw5FiIUUAfqdQ1WTDYAvvu7OZgYFp07NB99Iiy6th0M4UhQ+gAUu5J5e5aA4rwbX2nqn5Z7prd6b+lOcl71ktJmuaF/Ld1wxOwedOkpCZfb3wWZebICjm0nk5OYBmXUwU",
+  },
 });
 
-module.exports = AWS;
+const dynamoDB = DynamoDBDocumentClient.from(dynamoDBClient);
+
+export default dynamoDB;

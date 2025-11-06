@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons"; // Importa os ícones
 import { FavoritesProvider } from "../context/FavoritesContext";
 import { useContext, useEffect } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import HomeScreen from "../screens/HomeScreen";
 import Perfil from "../screens/Perfil";
@@ -62,9 +63,9 @@ function TabNavigator() {
 
       <Tab.Screen name="Carrinho" component={Carrinho} />
 
-      <Tab.Screen name="Perfil" component={Perfil} />
-
       <Tab.Screen name="Lista de Desejos" component={ListaDesejos} />
+      
+      <Tab.Screen name="Perfil" component={Perfil} />
 
     </Tab.Navigator>
   );
