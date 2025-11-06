@@ -1,394 +1,269 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Image,
-  Alert,
-  Platform
+  SafeAreaView,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
-import { CommonActions } from "@react-navigation/native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-const logoUrl = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png";
-
-const sexosDisponiveis = ["Masculino", "Feminino", "Outro", "Prefiro não dizer"];
+import { Ionicons } from "@expo/vector-icons";
+import dynamoDB from "../../awsConfig";
+import { GetCommand } from "@aws-sdk/lib-dynamodb";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import SweetAlert from "react-native-sweet-alert";
 
 export default function PerfilScreen({ navigation }) {
-  const [senhaAtual, setSenhaAtual] = useState("");
-  const [novaSenha, setNovaSenha] = useState("");
-  const [email] = useState("victorkoba08@gmail.com");
-
-  const [nome, setNome] = useState("");
-  const [sobrenome, setSobrenome] = useState("");
-  const [cpf] = useState("123.456.789-00");
-  const [sexo, setSexo] = useState("Masculino");
-  const [mostrarSexos, setMostrarSexos] = useState(false);
-
-  const [nascimento, setNascimento] = useState(new Date("2000-01-01"));
-  const [mostrarData, setMostrarData] = useState(false);
+  const [usuario, setUsuario] = useState(null);
+  const [carregando, setCarregando] = useState(true);
   const [telefone, setTelefone] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [uf, setUf] = useState("");
 
-  const salvarAlteracoes = () => {
-    Alert.alert("Sucesso", "Alterações salvas com sucesso!");
-  };
+  // Verifica se o usuário já possui conta
+  useEffect(() => {
+    const verificarUsuario = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("userId");
 
-  const formatarData = (data) => {
-    return data.toLocaleDateString("pt-BR");
-  };
+        if (!userId) {
+          setCarregando(false);
+          setUsuario(null);
+          return;
+        }
 
-  return (
-    <ScrollView style={styles.container}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#F3ECE2" }}>
-      {/* Cabeçalho */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.titulo}>Perfil</Text>
-        <Image source={{ uri: logoUrl }} style={styles.logo} />
+        const result = await dynamoDB.send(
+          new GetCommand({
+            TableName: "usuarios_olies",
+            Key: { userId: userId },
+          })
+        );
+
+        if (result.Item) {
+          setUsuario(result.Item);
+          setTelefone(result.Item.telefone || "");
+          setEndereco(result.Item.endereco || "");
+          setCidade(result.Item.cidade || "");
+          setUf(result.Item.uf || "");
+
+          // ✅ Exibe o SweetAlert de boas-vindas
+          SweetAlert.showAlertWithOptions({
+            title: "Bem-vindo(a)!",
+            subTitle: `Olá, ${result.Item.nome}! Aqui você pode editar suas informações.`,
+            confirmButtonTitle: "Ok",
+            confirmButtonColor: "#001f3f",
+            style: "success",
+          });
+        } else {
+          setUsuario(null);
+        }
+      } catch (error) {
+        console.error("Erro ao verificar usuário:", error);
+        setUsuario(null);
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    verificarUsuario();
+  }, []);
+
+  // Tela de carregamento
+  if (carregando) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#001f3f" />
+        <Text style={styles.loadingText}>Carregando perfil...</Text>
       </View>
-      <View style={styles.shadowLine}></View>
+    );
+  }
 
-      {/* Conteúdo */}
-      <View style={styles.content}>
-        <Text style={styles.greeting}>Olá Victor!</Text>
+  // Se o usuário NÃO existir
+  if (!usuario) {
+    return (
+      <SafeAreaView style={styles.noUserContainer}>
+        <Image
+          source={{
+            uri: "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png",
+          }}
+          style={styles.logo}
+        />
+        <Text style={styles.noUserText}>
+          Você ainda não possui uma conta.{"\n"}Faça login ou crie uma nova conta.
+        </Text>
 
-        {/* Botões lado a lado */}
-        <View style={styles.menuRow}>
-          {/* Gerenciar Endereços */}
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={() => navigation.navigate("Enderecos")}
-          >
-            <View style={styles.menuButtonContent}>
-              <Image
-                source={require("../assets/emoji-casa.png")}
-                style={styles.menuIcon}
-              />
-              <Text style={styles.menuButtonText}>Gerenciar{"\n"}Endereços</Text>
-            </View>
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => navigation.navigate("Login")}
+        >
+          <Text style={styles.loginText}>Fazer Login</Text>
+        </TouchableOpacity>
 
-          {/* Visualizar Pedidos */}
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={() => navigation.navigate("Pedidos")}
-          >
-            <View style={styles.menuButtonContent}>
-              <Image
-                source={require("../assets/icone-caixa.png")}
-                style={styles.menuIcon}
-              />
-              <Text style={styles.menuButtonText}>Visualizar{"\n"}Pedidos</Text>
-            </View>
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.registerButton}
+          onPress={() => navigation.navigate("Cadastro")}
+        >
+          <Text style={styles.registerText}>Criar Conta</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  // Se o usuário EXISTIR
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.header}>
+          <Ionicons
+            name="arrow-back"
+            size={28}
+            color="#001f3f"
+            onPress={() => navigation.goBack()}
+          />
+          <Text style={styles.title}>Meu Perfil</Text>
+          <Ionicons name="person-circle-outline" size={34} color="#001f3f" />
         </View>
 
-        {/* Card de Informações Pessoais */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitulo}>Informações Pessoais</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Nome"
-            placeholderTextColor="#888"
-            value={nome}
-            onChangeText={setNome}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Sobrenome"
-            placeholderTextColor="#888"
-            value={sobrenome}
-            onChangeText={setSobrenome}
-          />
-          <TextInput style={styles.inputDisabled} value={cpf} editable={false} />
-          <Text style={styles.sectionDicaAviso}>
-            Este campo não pode ser alterado
-          </Text>
-
-          {/* Seletor de Sexo */}
-          <TouchableOpacity
-            style={styles.input}
-            onPress={() => setMostrarSexos(!mostrarSexos)}
-          >
-            <Text>{sexo}</Text>
-          </TouchableOpacity>
-          {mostrarSexos &&
-            sexosDisponiveis.map((opcao) => (
-              <TouchableOpacity
-                key={opcao}
-                style={styles.opcao}
-                onPress={() => {
-                  setSexo(opcao);
-                  setMostrarSexos(false);
-                }}
-              >
-                <Text style={styles.opcaoTexto}>{opcao}</Text>
-              </TouchableOpacity>
-            ))}
-
-          {/* Seletor de Data */}
-          <TouchableOpacity
-            style={styles.input}
-            onPress={() => setMostrarData(true)}
-          >
-            <Text style={styles.inputText}>{formatarData(nascimento)}</Text>
-          </TouchableOpacity>
-
-          {mostrarData && (
-            <DateTimePicker
-              value={nascimento}
-              mode="date"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={(event, selectedDate) => {
-                if (event.type === "set" && selectedDate) {
-                  setNascimento(selectedDate);
-                }
-                setMostrarData(false);
-              }}
-              maximumDate={new Date()}
-            />
-          )}
+        <View style={styles.profileInfo}>
+          <Text style={styles.greeting}>Olá, {usuario.nome}!</Text>
 
           <TextInput
             style={styles.input}
             placeholder="Telefone"
-            placeholderTextColor="#888"
             value={telefone}
             onChangeText={setTelefone}
-            keyboardType="phone-pad"
-          />
-        </View>
-
-        {/* Card de Senha e E-mail */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitulo}>Informações de Cadastro</Text>
-
-          <Text style={styles.sectionTitle}>E-mail</Text>
-          <TextInput style={styles.inputDisabled} value={email} editable={false} />
-          <Text style={styles.sectionDicaAviso}>
-            Este campo não pode ser alterado
-          </Text>
-
-          <Text style={styles.sectionTitle}>Alterar senha</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Senha atual"
-            placeholderTextColor="#888"
-            secureTextEntry
-            autoCapitalize="none"
-            value={senhaAtual}
-            onChangeText={setSenhaAtual}
           />
           <TextInput
             style={styles.input}
-            placeholder="Nova senha"
-            placeholderTextColor="#888"
-            secureTextEntry
-            autoCapitalize="none"
-            value={novaSenha}
-            onChangeText={setNovaSenha}
+            placeholder="Endereço"
+            value={endereco}
+            onChangeText={setEndereco}
           />
+          <TextInput
+            style={styles.input}
+            placeholder="Cidade"
+            value={cidade}
+            onChangeText={setCidade}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="UF"
+            value={uf}
+            onChangeText={setUf}
+          />
+
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.buttonText}>Salvar Alterações</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Botões */}
-        <TouchableOpacity style={styles.saveButton} onPress={salvarAlteracoes}>
-          <Text style={styles.saveButtonText}>Salvar alterações</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.exitButton}
-          onPress={() => {
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [{ name: "Login" }],
-              })
-            );
-          }}
-        >
-          <Text style={styles.exitButtonText}>Sair</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
-    </ScrollView>
   );
 }
 
+// 🧱 Estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F3ECE2",
-    paddingTop: 40,
   },
-  logo: {
-    width: 77,
-    height: 40,
-    marginLeft: 10,
+  scroll: {
+    padding: 20,
   },
-  headerContainer: {
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    height: 92,
-    paddingHorizontal: 20,
+    marginBottom: 25,
   },
-  titulo: {
-    fontSize: 24,
+  title: {
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#052242",
-    marginBottom: 12,
+    color: "#001f3f",
   },
-  shadowLine: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
-    borderBottomWidth: 0.8,
-    marginBottom: 20,
-    borderBottomColor: "#00000025",
-  },
-  content: {
+  profileInfo: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
     padding: 20,
+    elevation: 2,
   },
   greeting: {
     fontSize: 18,
-    marginBottom: 15,
-    fontWeight: "500",
-  },
-
-  /* --- Botões lado a lado --- */
-  menuRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    gap: 10,
-  },
-  menuButton: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  menuButtonContent: {
-    alignItems: "center",
-  },
-  menuIcon: {
-    width: 30,
-    height: 30,
-    marginBottom: 5,
-    resizeMode: "contain",
-  },
-  menuButtonText: {
-    fontSize: 14,
     fontWeight: "600",
-    color: "#001f3f",
-    textAlign: "center",
-  },
-
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardTitulo: {
-    fontSize: 18,
-    fontWeight: "bold",
     marginBottom: 15,
-    color: "#052242",
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
+    backgroundColor: "#f0f0f0",
     padding: 12,
-    fontSize: 15,
+    borderRadius: 8,
     marginBottom: 10,
-    backgroundColor: "#fff",
-    height: 60,
+  },
+  button: {
+    backgroundColor: "#001f3f",
+    padding: 14,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  buttonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F3ECE2",
   },
-  inputDisabled: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
-    padding: 12,
-    fontSize: 15,
-    marginBottom: 10,
-    backgroundColor: "#f2f2f2",
-    color: "#999",
-    height: 60,
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#001f3f",
   },
-  opcao: {
-    padding: 10,
-    backgroundColor: "#eee",
-    borderRadius: 6,
-    marginBottom: 5,
+  noUserContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F3ECE2",
   },
-  opcaoTexto: {
-    fontSize: 15,
-    color: "#333",
+  logo: {
+    width: 120,
+    height: 70,
+    marginBottom: 20,
   },
-  saveButton: {
+  noUserText: {
+    fontSize: 17,
+    marginBottom: 20,
+    textAlign: "center",
+    color: "#001f3f",
+  },
+  loginButton: {
     backgroundColor: "#001f3f",
     padding: 12,
-    borderRadius: 6,
+    borderRadius: 8,
+    width: 200,
     alignItems: "center",
-    marginTop: 10,
-    width: 250,
-    alignSelf: "center",
+    marginBottom: 10,
   },
-  saveButtonText: {
+  loginText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16,
   },
-  exitButton: {
-    backgroundColor: "#F3ECE2",
+  registerButton: {
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#999",
-    padding: 7,
-    borderRadius: 6,
+    borderColor: "#001f3f",
+    padding: 12,
+    borderRadius: 8,
+    width: 200,
     alignItems: "center",
-    alignSelf: "center",
-    marginTop: 20,
-    width: 100,
   },
-  exitButtonText: {
-    fontSize: 15,
-    textAlign: "center",
-    color: "#555",
-  },
-  sectionDicaAviso: {
-    fontSize: 13,
-    color: "#7a7a7aff",
-    fontStyle: "italic",
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  inputText: {
-    fontSize: 15,
-    color: "#333",
+  registerText: {
+    color: "#001f3f",
+    fontWeight: "bold",
   },
 });

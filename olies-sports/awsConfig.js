@@ -3,11 +3,12 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
 const dynamoDBClient = new DynamoDBClient({
-  region: "us-east-1", // Substitua se sua região for diferente
+  region: "us-east-1", 
   credentials: {
-    accessKeyId: "ASIAZYPPXAY4WMSIA6Z5",
-    secretAccessKey: "3rVMdyoDI3eEoy/Qrw5QUppNcRC5ot0e8jf4ity3",
-    sessionToken: "IQoJb3JpZ2luX2VjENv//////////wEaCXVzLXdlc3QtMiJGMEQCIH0poaBEthkzrI3HAHtjrnxWVwwfMF2OJ8NpaaVMUaW1AiBA+AN5eGf/2IeHqABf/02xE7Q2ecUwP5dH2B2Fi6O8VyrBAgik//////////8BEAAaDDY3MTA1NDQ5NzMzNyIMuKOEkVRet9SmKipPKpUCXlkjeWh7fDipcQ1AI5+123oGTeBZ/lVNHn16wWgGN5o46KYkGyFvRNViBIEOjzmYjybM2R+zB9MmcDjFU6wsSHPgSKYDSxXsTm8ADIUCF6jJ9v9n18e6RghCVMgvn7O6nBXSWrcLHn0vMa2jExxq10qHkox5WLUBwJ5mVAjK/fcFR0k9eg/Z1QMlECfR4rNiHYlRE4L+BqFHRNKqB9Td96hOshSjyRL1vZH7t+itoeo0gWoXYKB82ay+kjfDTXrqUWhwgC1doCch//8gRcGZUY7dHMb1N9c1s2GyhoVSEt/0mMK4g62mGQNl4OYYu6nTbandiJ1fSZc0axPUydgVqbh+L5tQHVZCK+ev3L3CXViUMjKBujCzh7LIBjqeARnYRPGawUmVTXiJ23oWDV53Jv16QVHkm4/YsZit+xJ6qs4ZoHI07HLRMWiRtgGYIbYtey4hFXE75sqzmqCPw5FiIUUAfqdQ1WTDYAvvu7OZgYFp07NB99Iiy6th0M4UhQ+gAUu5J5e5aA4rwbX2nqn5Z7prd6b+lOcl71ktJmuaF/Ld1wxOwedOkpCZfb3wWZebICjm0nk5OYBmXUwU",
+    accessKeyId: "ASIAZYPPXAY42PRUWUMZ",
+    secretAccessKey: "Nl7Ldn3YzXaGRvWoabjAvmht69Vfa8Wmj1kTdTjZ",
+    sessionToken: "IQoJb3JpZ2luX2VjEOL//////////wEaCXVzLXdlc3QtMiJHMEUCICDdMJDisXdGa7fUGh995ZGwa6kxv4mHd/3MECFobD9zAiEA5Vz4b+pcb8KHWxlZ5zHssh1xhZwkNqRfXCVqGNl5BQkqwQIIq///////////ARAAGgw2NzEwNTQ0OTczMzciDGRjPhW1UfCsll3jyCqVAiVfcOnnIwj3p67fOXT0xqaWtGFbCvHXujdICpqphccCmEPCspimvrxnmZJM9wqCPcs7Q1tmLixB4HUDGQ7XaBYcYvn216oCdXrhULlHUOPZKvy9Ab8EAWpOfpBNLRxU4JG8J0K23CILi7+3G/whC9VFt3gM1i0/OsJMO4zcvChfHwZWyMDqE9J0jRpVd4b7sq4bsEX0OF13H1EhbAjoKH/3Pe8FVXdalf+agTujav3VXt3S1WspG7leEXbgo5Ak6USYD3FzPmAzBuSLnCUqofoA6jLdU8QeMjLWv3Amryn6Lcol1mBcbTv6quo7HVaZO/9/AScwpR21yAe0yhJWGkHfYIjE1HCdDgmAngxVy0BaR1pUpD0wwMmzyAY6nQHu7dw7IOK//xe/mIDJchYaPphO8110ycldWNtCppwBGXbcSi2fIgiNQ50tjjz9SSvHk5j83CqQsJpPCcWeYZxhnT7Zq5sOnQ2TE/lOl4m3AdknOZ84hFtfHko4n7Csiiu/1ub4HxCn01UnI+K29r2kuZui0QlKVlF8ZK/z/cwhY2RIh3IJfpqpG/wtcm+mEOWW1cWvTbi+GthR+Lqe",
+  
   },
 });
 
