@@ -1,9 +1,29 @@
-import React from "react";
-import { View, Text, StyleSheet, TextInput, Image, ScrollView, Pressable, TouchableOpacity } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import {
+    View,
+    Text,
+    StyleSheet,
+    TextInput,
+    Image,
+    ScrollView,
+    Pressable,
+    TouchableOpacity,
+    Dimensions,
+} from "react-native";
 import { useFonts } from "expo-font";
-import { useState } from "react";
+// Não precisamos mais do Ionicons, mas o mantemos caso seja necessário para outros componentes.
+import { Ionicons } from '@expo/vector-icons'; 
 
-// 1. Definição dos dados dos produtos do carrossel
+// Obtém a largura da tela para dimensionar o banner
+const { width } = Dimensions.get('window');
+
+// --- 1. Definição de URLs e Dados (MANTIDOS) ---
+
+const bannerUrls = [
+    "https://olies-ports.s3.us-east-1.amazonaws.com/img/Banner%20Olie%27s%20Sportes.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4TBA33C32%2F20251118%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251118T125203Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEP3%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIQC61lObM9ncKWc3quq5OXPx20P%2Fi8VVbO0N0JsMfYnyGQIgBsZpapqAgli7uctWRuWyo5QCIQrDt3SF2%2Fy9dVvClI8qjAMIxv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAAGgw2NzEwNTQ0OTczMzciDAT59gVZ6%2F9eNkHaJCrgAgXIZuQD78Pgzjk336nxRTU5knOOxMH%2FoeHDBhqRCNPG%2F%2BFM8mat9s8FRgKYbpGSpZ5zC3ka4O0Ohdupg5XzYMtFC4JkbMTwbiyMb3du1ZEm27ZKdCiyvGh5sWHs1JBctxKj5DP0ftMK2kdUVpmaCu4VeMtLEbSRJ6mce9rzk7%2FduAzudhSdYbPuu%2B0eUt6ABdm0SZE9gKde0hdkU6%2B759L0aIgZBfrD6RoHhVInUQIH097FvON%2Fc0h9%2FSZpVF955t6ZmR6Nafas7%2FWW6WDKOkpY%2FMETSJ8POtEUyAvL41HyrCxaqtvpOBnrrNu7er8oY9n8Ht%2FJyV6e4ORCY%2B%2Br19MrhG5Cu8KMn9gp0T3DheuKc3fruUfen%2FDsakl0IXZPIam0z1sXeyp5VVlE%2FNlBlU9X%2BJ7TMm68sJLnUhcij21uFkmUNnlzHaiikiI5hXZBB4kD3sxrSHMvsTOkUJ%2F66Xsw7qnxyAY6hwJheseGqrZWZGgRUVjX3%2BeHEwKWtd4yGK8ho7%2BSHSo2uzkBfiMAPXeSHuT1ZRyWZk1mEV0DrPfycQZ0XirEu6H95b2AYFD2tlNLqpLpcD8Rzm76LxjAqPWWHCzNkJBiVkoFUT6AqVcDwCcnSUWTeyEFHSrYZmCKc1zg9ch2bQ2LnKrpa6xJBBFqQ4s3VTUspbmOFOXMfQJdLlHGBkh8OGwyecY5S6aOrQHau8%2BmhCFjmL4VF%2FWSPebEQFM12k88PnXgauko1YIbdahRbvB48SfLGvfOIn6XHsPACBNyvke2kTUxQ39fEf9LzZSLe%2BD0R87Zy%2Bc2gtZJXTyD5lLq9jYXvE4yj7o5JQ%3D%3D&X-Amz-Signature=ebd3a41cfc51f08ee6adbce02a30984a21d4e999f982ca5c6e46c1a70faceea2&X-Amz-SignedHeaders=host&response-content-disposition=inline",
+    "https://olies-ports.s3.us-east-1.amazonaws.com/img/banner%20olie%27s%20sports.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4TBA33C32%2F20251118%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251118T125253Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEP3%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIQC61lObM9ncKWc3quq5OXPx20P%2Fi8VVbO0N0JsMfYnyGQIgBsZpapqAgli7uctWRuWyo5QCIQrDt3SF2%2Fy9dVvClI8qjAMIxv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAAGgw2NzEwNTQ0OTczMzciDAT59gVZ6%2F9eNkHaJCrgAgXIZuQD78Pgzjk336nxRTU5knOOxMH%2FoeHDBhqRCNPG%2F%2BFM8mat9s8FRgKYbpGSpZ5zC3ka4O0Ohdupg5XzYMtFC4JkbMTwbiyMb3du1ZEm27ZKdCiyvGh5sWHs1JBctxKj5DP0ftMK2kdUVpmaCu4VeMtLEbSRJ6mce9rzk7%2FduAzudhSdYbPuu%2B0eUt6ABdm0SZE9gKde0hdkU6%2B759L0aIgZBfrD6RoHhVInUQIH097FvON%2Fc0h9%2FSZpVF955t6ZmR6Nafas7%2FWW6WDKOkpY%2FMETSJ8POtEUyAvL41HyrCxaqtvpOBnrrNu7er8oY9n8Ht%2FJyV6e4ORCY%2B%2Br19MrhG5Cu8KMn9gp0T3DheuKc3fruUfen%2FDsakl0IXZPIam0z1sXeyp5VVlE%2FNlBlU9X%2BJ7TMm68sJLnUhcij21uFkmUNnlzHaiikiI5hXZBB4kD3sxrSHMvsTOkUJ%2F66Xsw7qnxyAY6hwJheseGqrZWZGgRUVjX3%2BeHEwKWtd4yGK8ho7%2BSHSo2uzkBfiMAPXeSHuT1ZRyWZk1mEV0DrPfycQZ0XirEu6H95b2AYFD2tlNLqpLpcD8Rzm76LxjAqPWWHCzNkJBiVkoFUT6AqVcDwCcnSUWTeyEFHSrYZmCKc1zg9ch2bQ2LnKrpa6xJBBFqQ4s3VTUspbmOFOXMfQJdLlHGBkh8OGwyecY5S6aOrQHau8%2BmhCFjmL4VF%2FWSPebEQFM12k88PnXgauko1YIbdahRbvB48SfLGvfOIn6XHsPACBNyvke2kTUxQ39fEf9LzZSLe%2BD0R87Zy%2Bc2gtZJXTyD5lLq9jYXvE4yj7o5JQ%3D%3D&X-Amz-Signature=a1971782e3d47cd9d2adb6919681e55dc286954e7f256dd7a556a931ed211a29&X-Amz-SignedHeaders=host&response-content-disposition=inline",
+];
+
 const initialProducts = [
     {
         id: "p1",
@@ -67,7 +87,7 @@ const lastAccessedProducts = [
 const logoUrl =
     "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4RCJUVETB%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T213109Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIF5r9n3SlIlwrWIih6WGQBbM0tGPsmu0u7PQwsqhz%2BPlAiEAzLnLGZ5HWc0lLBpQCkn8Ylt59i%2BhXca%2BCmKpOjpOQeIqgwMINxAAGgw2NzEwNTQ0OTczMzciDDFO1pKJNryxXbCVoyrgAmMmOaS%2BflOGH6QAoaH6tzhwkvCfOw1wekhWdxd6GUAlmfhHfXztqglXHvi2%2FQTpdwpgBqVFOX54Jr9tA%2FG%2BhCyO9tJQWvEGsSpNrutHIdNSftmozjutyzZYH6KLii%2BZaAP%2BCN3lYeN%2FB%2FJLvosSMsCPw7pxl6xzcYL4d6GTtqsKlK6Kcv%2BDODZWmZe3jPJKj1%2FjO%2B203fQN9Dtx1ggorUTAuKfTXzaCnYvkpRPCJ2F6052rKZnjND%2FGmyvflyFr7JnTgKF3HVI164zMpxtFN%2BspzP5UBHMui0wtJR7XtVQbr8rytz4f6DYoDmL4RVxX0uGr2%2BCK1b6tGzOiEdLBsgZ21Z0e4%2Fl%2FjG%2FuxejOUZfQwhJpHnY5kbMu1oyYUKvuKTsyAgktsLbNkMG1WuopiJXaQKj%2Fcl%2BH0x0KXYz3q8mttq8QUpqOmh9rnkc6DxEMGmIWHzB9rLtRvhN7uc9PWXQwgNzkxwY6hwKiJY9COGoIhCXtEd48aip89g9td2xbtd54Ojr2N4wznAW2oK1ufZ9OTiMIo8tuOL%2BUhJigtU3KxkJugU2JVjLAnDctb6AImhjY4ULdlqxP35%2FI3LHaM1t5Wiw7ltZ3laOJ0FsSDiNt693oroD3pSBxs%2B4R01ye3Ra62%2B7w7wkJxGLcPLOHraDS36OLrSQh4jOAjiOey%2BrKt7t6QaiJgFu4qRVWLA23wQzhYTMRNpTzaTzU26pewVPuRhE5y7X82XqNiNdum8vVwd2KO6ZHlOWxKDqhiOV4PnOoNYGuDj99HpOK6hE8UIThBdCQAshDTd6VKPUYsMEc%2FQZQWUvQHDSYA31Mc7nikQ%3D%3D&X-Amz-Signature=11eb26d8eb399b6d2f91c9721a92839350d8a784acefe0d988a547de57c03b6f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
 
-// Componente Card de Produto para reutilização
+// --- Componente Card de Produto (MANTIDO) ---
 const ProductCard = ({ product, onAddToCart }) => (
     <View style={styles.cards}>
         <View style={[styles.desconto]}>
@@ -80,7 +100,6 @@ const ProductCard = ({ product, onAddToCart }) => (
             <Text style={[styles.fontKantumruySemiBold, styles.nomeProduto]}>{product.name}</Text>
         </View>
         <View>
-            {/* 3. Chamada da função com os dados do produto */}
             <Pressable style={styles.botao} onPress={() => onAddToCart(product)}>
                 <Text style={[styles.textBotao, styles.fontKantumruySemiBold]}>Adicionar ao carrinho</Text>
             </Pressable>
@@ -92,27 +111,50 @@ const ProductCard = ({ product, onAddToCart }) => (
     </View>
 );
 
+// --- Componente Principal: HomeScreen ---
 export default function HomeScreen({ navigation }) {
     const [search, setSearch] = useState("");
+    const [currentBannerIndex, setCurrentBannerIndex] = useState(0); 
+    
+    // Os Refs são mantidos, mas não são usados para rolagem manual com setas
+    const lancamentosScrollRef = useRef(null);
+    const acessosScrollRef = useRef(null);
+    
+    // As constantes de rolagem são mantidas, mas a função de scroll não é mais usada
+    const CARD_WIDTH = 165; 
+    const GAP = 20;
+    const SCROLL_AMOUNT = CARD_WIDTH + GAP; 
+
     const [fontsLoaded] = useFonts({
         "Kantumruy Pro SemiBold": require("../assets/fonts/KantumruyPro-SemiBold.ttf"),
         "Kantumruy Pro Medium": require("../assets/fonts/KantumruyPro-Medium.ttf"),
     });
 
-    if (!fontsLoaded) {
-        return null;
-    }
+    // Lógica para o carrossel de banners (auto-scroll a cada 5 segundos) - MANTIDA
+    useEffect(() => {
+        if (bannerUrls.length > 1) {
+            const interval = setInterval(() => {
+                setCurrentBannerIndex(prevIndex => (prevIndex + 1) % bannerUrls.length);
+            }, 5000); 
 
-    // 2. Função para adicionar ao carrinho e navegar
+            return () => clearInterval(interval); 
+        }
+    }, []); 
+    
+    // A função scrollProducts foi removida, pois as setas foram removidas.
+    
     const handleAddToCart = (product) => {
-        // Navega para a tela 'Carrinho' e passa os dados do item
-        // A tela de Carrinho precisará implementar a lógica para receber este item
         navigation.navigate("Carrinho", { newItem: product });
         console.log("Adicionado ao carrinho:", product.name);
     };
 
+    if (!fontsLoaded) {
+        return null;
+    }
+
     return (
         <ScrollView contentContainerStyle={{ alignItems: "center" }} style={styles.container}>
+            {/* Área de Pesquisa e Logo */}
             <View style={styles.searchContainer}>
                 <TextInput
                     style={[styles.input, styles.fontKantumruy]}
@@ -123,16 +165,32 @@ export default function HomeScreen({ navigation }) {
                 />
                 <Image source={{ uri: logoUrl }} style={styles.logo} />
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate("ListaDesejos")}>
-                <View style={styles.banner}>
+            
+            {/* Carrossel de Banner */}
+            <TouchableOpacity onPress={() => navigation.navigate("ListaDesejos")} style={styles.bannerContainer}>
+                {bannerUrls.length > 0 && ( 
                     <Image
-                        source={require("../assets/banner-promocao.jpg")}
-                        style={styles.bannerPromocao}
-                        resizeMode="contain"
+                        source={{ uri: bannerUrls[currentBannerIndex] }} 
+                        style={styles.bannerImage}
+                        resizeMode="cover" 
                     />
-                </View>
+                )}
             </TouchableOpacity>
 
+            {/* Indicadores de página do banner */}
+            <View style={styles.paginationContainer}>
+                {bannerUrls.map((_, index) => (
+                    <View
+                        key={index}
+                        style={[
+                            styles.paginationDot,
+                            currentBannerIndex === index ? styles.activeDot : styles.inactiveDot,
+                        ]}
+                    />
+                ))}
+            </View>
+
+            {/* Categorias */}
             <View style={styles.categoriesContainer}>
                 <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
                     <View style={styles.categoryButton}>
@@ -174,18 +232,18 @@ export default function HomeScreen({ navigation }) {
                 </TouchableOpacity>
             </View>
 
-            <View>
-                <View style={styles.lancamentosContainer}>
-                    <Text style={[styles.lancamentosText, styles.fontKantumruyMedium]}>Lançamentos</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
-                        <Text style={[styles.verTodos, styles.fontKantumruySemiBold]}>Ver todos</Text>
-                    </TouchableOpacity>
-                </View>
+            {/* Cabeçalho Lançamentos */}
+            <View style={styles.lancamentosContainer}>
+                <Text style={[styles.lancamentosText, styles.fontKantumruyMedium]}>Lançamentos</Text>
+                <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
+                    <Text style={[styles.verTodos, styles.fontKantumruySemiBold]}>Ver todos</Text>
+                </TouchableOpacity>
             </View>
 
-            {/* Carrossel de Lançamentos */}
+            {/* Carrossel de Lançamentos (Sem Setas) */}
             <View style={styles.containerCarrossel}>
                 <ScrollView
+                    ref={lancamentosScrollRef} 
                     horizontal={true}
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.scrollContainer}
@@ -196,13 +254,15 @@ export default function HomeScreen({ navigation }) {
                 </ScrollView>
             </View>
 
+            {/* Cabeçalho Últimos Acessos */}
             <View style={styles.contUltimosAcessos}>
                 <Text style={[styles.ultimosAcessosText, styles.fontKantumruyMedium]}>Últimos produtos acessados</Text>
             </View>
 
-            {/* Carrossel de Últimos Acessos */}
+            {/* Carrossel de Últimos Acessos (Sem Setas) */}
             <View style={styles.containerCarrossel}>
                 <ScrollView
+                    ref={acessosScrollRef} 
                     horizontal={true}
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.scrollContainer}
@@ -222,12 +282,14 @@ const styles = StyleSheet.create({
         width: "100%",
         backgroundColor: "#F3ECE2",
     },
+    // Fontes
     fontKantumruySemiBold: {
         fontFamily: "Kantumruy Pro SemiBold",
     },
     fontKantumruyMedium: {
         fontFamily: "Kantumruy Pro Medium",
     },
+    // Input de pesquisa
     input: {
         width: "80%",
         height: 40,
@@ -237,11 +299,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         backgroundColor: "#fff",
     },
+    // Imagem do produto no card
     image: {
         width: "100%",
         height: 70,
         marginVertical: 20,
     },
+    // Container de Pesquisa e Logo
     searchContainer: {
         flexDirection: "row",
         width: "90%",
@@ -252,16 +316,45 @@ const styles = StyleSheet.create({
         marginTop: 40,
         marginBottom: 10,
     },
-    banner: {
-        width: 440,
-        height: 293,
-        alignSelf: "center",
+    // Imagem da Logo
+    logo: {
+        width: 77,
+        height: 40,
+        marginLeft: 10,
     },
-    bannerPromocao: {
+    // Estilos para o Carrossel de Banner
+    bannerContainer: {
+        width: width * 0.95, // Usa 95% da largura da tela
+        height: width * 0.95 * (293 / 440), // Mantém a proporção da imagem original (440x293)
+        alignSelf: "center",
+        borderRadius: 8,
+        overflow: "hidden", 
+    },
+    bannerImage: {
         width: "100%",
         height: "100%",
-        borderRadius: 8,
     },
+    // Estilos de paginação (pontos) para o banner
+    paginationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 10,
+        marginBottom: 8,
+    },
+    paginationDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginHorizontal: 4,
+    },
+    activeDot: {
+        backgroundColor: '#052242',
+    },
+    inactiveDot: {
+        backgroundColor: '#ccc',
+    },
+    
+    // Categorias
     categoriesContainer: {
         flexDirection: "row",
         justifyContent: "space-around",
@@ -293,6 +386,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         textAlign: "center",
     },
+    // Lançamentos Header
     lancamentosContainer: {
         flexDirection: "row",
         width: "90%",
@@ -302,14 +396,14 @@ const styles = StyleSheet.create({
     },
     lancamentosText: {
         fontSize: 18,
-        fontFamily: "KantumruyPro-SemiBold",
+        fontFamily: "Kantumruy Pro Medium",
         color: "#9D9D9D",
     },
     verTodos: {
         fontSize: 14,
         color: "#052242",
     },
-
+    // Cards de Produtos
     cards: {
         backgroundColor: "white",
         height: 242,
@@ -327,7 +421,6 @@ const styles = StyleSheet.create({
         //Android
         elevation: 10,
     },
-
     promocao: {
         backgroundColor: "#052242",
         color: "white",
@@ -337,35 +430,29 @@ const styles = StyleSheet.create({
         fontSize: 12,
         borderRadius: 5,
     },
-
     desconto: {
         width: "100%",
         alignItems: "flex-start",
         paddingLeft: 10,
         paddingTop: 10,
     },
-
     promoValor: {
         width: "100%",
     },
-
     nomeProduto: {
         color: "#9D9D9D",
         textAlign: "center",
     },
-
     precoProduto: {
         color: "#696969",
         textAlign: "center",
         fontSize: 16,
     },
-
     parcelaProduto: {
         color: "#A3A3A3",
         textAlign: "center",
         fontSize: 10,
     },
-
     botao: {
         backgroundColor: "#fff",
         borderColor: "#052242",
@@ -378,24 +465,23 @@ const styles = StyleSheet.create({
         width: 100,
         height: 19,
     },
-
     textBotao: {
         color: "#052242",
         fontSize: 10,
     },
-
+    // Contêiner Carrossel de Produtos (Usado agora que as setas foram removidas)
     containerCarrossel: {
-        flex: 1,
+        width: '100%',
         paddingVertical: 20,
         backgroundColor: "#F3ECE2",
-        marginRight: 20,
     },
     scrollContainer: {
         paddingHorizontal: 10,
         gap: 20,
         marginLeft: 10,
+        paddingRight: 10, // Ajustado para remover o padding extra das setas
     },
-
+    // Últimos Acessos Header
     contUltimosAcessos: {
         flexDirection: "row",
         width: "90%",
@@ -404,13 +490,8 @@ const styles = StyleSheet.create({
     },
     ultimosAcessosText: {
         fontSize: 18,
-        fontFamily: "KantumruyPro-SemiBold",
+        fontFamily: "Kantumruy Pro Medium",
         color: "#9D9D9D",
     },
-
-    logo: {
-        width: 77,
-        height: 40,
-        marginLeft: 10,
-    },
+    // Os estilos 'carouselWrapper', 'arrow', 'arrowLeft' e 'arrowRight' foram removidos.
 });
