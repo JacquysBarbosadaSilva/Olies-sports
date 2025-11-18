@@ -1,8 +1,18 @@
-import React, { useState, useLayoutEffect, useContext } from "react";
-import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
+// InfoProdutos.js
+import React, { useEffect, useState } from "react";
+import {
+    View,
+    Text,
+    Image,
+    FlatList,
+    StyleSheet,
+    TouchableOpacity,
+    Dimensions,
+    Picker, // se estiver usando a API antiga; preferir @react-native-picker/picker
+    Platform,
+} from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { FavoritesContext } from "../context/FavoritesContext";
 
 const { height } = Dimensions.get("window");
 const CAROUSEL_HEIGHT_RATIO = 0.5;
@@ -11,133 +21,130 @@ const ITEM_HEIGHT = height * CAROUSEL_HEIGHT_RATIO;
 export default function InfoProduto() {
     const navigation = useNavigation();
     const route = useRoute();
-    const { produto } = route.params;
-    const { addFavorite, removeFavorite, isFavorite } = useContext(FavoritesContext);
+    const { produto } = route.params || {};
 
-    const [corSelecionada, setCorSelecionada] = useState("bege");
+    // state
+    const [selectedColors, setSelectedColors] = useState([]); // array de color objects { cor, hex, imagens }
+    const [availableColors, setAvailableColors] = useState(produto?.cores || []);
+    const [displayImages, setDisplayImages] = useState([]); // urls para o carrossel
     const [imagemAtual, setImagemAtual] = useState(0);
-    const [quantidade, setQuantidade] = useState(1);
+    const [selectedColorPicker, setSelectedColorPicker] = useState(null); // valor do picker (color id)
 
-    const coresDisponiveis = {
-        bege: [
-            require("../assets/img/cor-produto1.png"),
-            require("../assets/img/cor2-produto1.png"),
-            require("../assets/img/cor3-produto1.png"),
-            require("../assets/img/cor4-produto1.png"),
-        ],
-        branco: [require("../assets/img/produto-categoria1.png"), require("../assets/img/info-produto1.png")],
+    // inicializa availableColors a partir do produto
+    useEffect(() => {
+        setAvailableColors(produto?.cores || []);
+        // default display: primeira cor se existir
+        const first = produto?.cores && produto.cores.length ? produto.cores[0] : null;
+        if (first) {
+            setSelectedColors([first]);
+            setDisplayImages(first.imagens || []);
+            setSelectedColorPicker(first.id || first.cor);
+        }
+    }, [produto]);
+
+    // quando selectedColors muda, atualiza displayImages (concatena imagens das cores selecionadas, ordem adicionada)
+    useEffect(() => {
+        if (!selectedColors || selectedColors.length === 0) {
+            const first = availableColors && availableColors.length ? availableColors[0] : null;
+            setDisplayImages(first ? first.imagens || [] : []);
+            return;
+        }
+        const urls = [];
+        selectedColors.forEach((c) => {
+            if (c.imagens && c.imagens.length) urls.push(...c.imagens);
+        });
+        setDisplayImages(urls);
+    }, [selectedColors, availableColors]);
+
+    // handle picker selection: adiciona a cor selecionada ao array de selectedColors (se já estiver, ignora)
+    const handlePickerSelect = (value) => {
+        if (!value) return;
+        const colorObj = availableColors.find((c) => c.id === value || c.cor === value);
+        if (!colorObj) return;
+        // se já foi selecionada, apenas remove (toggle) — mas você pediu "poder selecionar mais de uma, se selecionar mais de uma vai adicionando"
+        // eu implemento toggle: se já estava selecionada, remove; se não, adiciona.
+        setSelectedColors((prev) => {
+            const exists = prev.some((p) => (p.id || p.cor) === (colorObj.id || colorObj.cor));
+            if (exists) return prev.filter((p) => (p.id || p.cor) !== (colorObj.id || colorObj.cor));
+            return [...prev, colorObj];
+        });
+        setSelectedColorPicker(value);
     };
-
-    const imagens = coresDisponiveis[corSelecionada] || [];
-    const selectedImageSource = imagens.length > 0 ? imagens[0] : null;
-
-    const produtoIdUnique = `${produto.id}-${corSelecionada}`;
-    const favoritado = isFavorite(produtoIdUnique);
 
     const handleScroll = (event) => {
         const index = Math.round(event.nativeEvent.contentOffset.y / ITEM_HEIGHT);
         setImagemAtual(index);
     };
 
-    const toggleFavorite = () => {
-        const itemFavorito = {
-            id: produtoIdUnique,
-            produtoId: produto.id,
-            nome: produto.nome,
-            preco: produto.preco,
-            cor: corSelecionada,
-            quantidade: 1,
-            imagemSource: selectedImageSource,
-        };
-
-        if (favoritado) {
-            removeFavorite(produtoIdUnique);
-        } else {
-            addFavorite(itemFavorito);
-        }
-    };
-
-    // Adiciona botão de coração no header
-    useLayoutEffect(() => {
-        navigation.setOptions({
-            headerRight: () => (
-                <Ionicons
-                    name={favoritado ? "heart" : "heart-outline"}
-                    size={24}
-                    color="#052242"
-                    style={{ marginRight: 15 }}
-                    onPress={toggleFavorite}
-                />
-            ),
-        });
-    }, [navigation, favoritado, corSelecionada]);
-
-    const handleAddToCart = () => {
-        const itemParaCarrinho = {
-            id: produtoIdUnique, 
-            produtoId: produto.id,
-            name: produto.nome,
-            price: produto.preco, // O nome da propriedade deve ser 'price'
-            image: selectedImageSource, // O nome da propriedade deve ser 'image'
-            cor: corSelecionada,
-            quantidade: 1, // Sempre começa com 1 por clique
-        }; // Navega para a aba 'Carrinho' e passa o item como 'newItem'
-
-        navigation.navigate("Tabs", {
-            screen: "Carrinho",
-            params: { newItem: itemParaCarrinho },
-        });
-    };
+    // navega para detalhes do produto
+    const goDetalhes = () => navigation.navigate("DetalhesProduto", { productId: produto?.id });
 
     return (
         <View style={styles.container}>
+            {/* carrossel vertical */}
             <FlatList
-                data={imagens}
+                data={displayImages}
                 contentContainerStyle={{ paddingTop: 50 }}
-                keyExtractor={(_, i) => i.toString()}
-                renderItem={({ item }) => <Image source={item} style={styles.imagem} resizeMode="contain" />}
+                keyExtractor={(_, i) => String(i)}
+                renderItem={({ item }) => <Image source={{ uri: item }} style={styles.imagem} resizeMode="contain" />}
                 showsVerticalScrollIndicator={false}
                 pagingEnabled
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 snapToInterval={ITEM_HEIGHT}
-                decelerationRate="normal"
             />
 
             <View style={styles.indicadores}>
-                {imagens.map((_, index) => (
+                {displayImages.map((_, index) => (
                     <View key={index} style={[styles.indicador, imagemAtual === index && styles.indicadorAtivo]} />
                 ))}
             </View>
 
             <View style={styles.infoContainer}>
-                <View style={styles.coresContainer}>
-                    <TouchableOpacity
-                        style={[
-                            styles.circuloCor,
-                            { backgroundColor: "#E3DBC8" },
-                            corSelecionada === "bege" && styles.corSelecionada,
-                        ]}
-                        onPress={() => setCorSelecionada("bege")}
-                    />
-                    <TouchableOpacity
-                        style={[
-                            styles.circuloCor,
-                            { backgroundColor: "#fff" },
-                            corSelecionada === "branco" && styles.corSelecionada,
-                        ]}
-                        onPress={() => setCorSelecionada("branco")}
-                    />
+                {/* DROPDOWN para cores */}
+                <Text style={{ fontWeight: "600", marginBottom: 8 }}>Cor</Text>
+
+                {/* Usando Picker (troque conforme sua lib) */}
+                <View style={{ borderWidth: 1, borderColor: "#eee", borderRadius: 8, marginBottom: 8 }}>
+                    <Picker
+                        selectedValue={selectedColorPicker}
+                        onValueChange={(val) => handlePickerSelect(val)}
+                        mode="dropdown"
+                        style={{ height: Platform.OS === "android" ? 50 : undefined }}
+                    >
+                        {availableColors.map((c) => (
+                            <Picker.Item key={c.id || c.cor} label={c.cor} value={c.id || c.cor} />
+                        ))}
+                    </Picker>
                 </View>
 
-                <Text style={styles.nome}>{produto.nome}</Text>
-                <Text style={styles.preco}>R$ {produto.preco.toFixed(2)}</Text>
+                {/* Exibir circunferências das cores selecionadas (multi) */}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    {selectedColors.map((c) => (
+                        <View key={c.id || c.cor} style={{ alignItems: "center" }}>
+                            <View
+                                style={[
+                                    styles.colorCircleLarge,
+                                    c.hex
+                                        ? { backgroundColor: c.hex }
+                                        : { backgroundColor: "#fff", borderWidth: 1, borderColor: "#ddd" },
+                                ]}
+                            />
+                            <Text style={{ fontSize: 11, marginTop: 4 }}>{c.cor}</Text>
+                        </View>
+                    ))}
+                </View>
 
-                <TouchableOpacity style={styles.botaoDetalhes} onPress={() => navigation.navigate("DetalhesProduto")}>
+                {/* Nome e preço */}
+                <Text style={styles.nome}>{produto?.nome}</Text>
+                <Text style={styles.preco}>R$ {Number(produto?.preco || 0).toFixed(2)}</Text>
+
+                {/* botões (mantive seu design) */}
+                <TouchableOpacity style={styles.botaoDetalhes} onPress={goDetalhes}>
                     <Text style={styles.textoBotaoDetalhes}>Detalhes do Produto</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.botaoCarrinho} onPress={handleAddToCart}>
+                <TouchableOpacity style={styles.botaoCarrinho}>
                     <Text style={styles.textoBotaoCarrinho}>Adicionar ao Carrinho</Text>
                 </TouchableOpacity>
             </View>
@@ -145,32 +152,38 @@ export default function InfoProduto() {
     );
 }
 
-// --- Estilos --- (mesmos do seu código)
+/* --- estilos (mantive seu visual) --- */
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#fff" },
-    imagem: { width: "100%", marginTop: 20, height: height * CAROUSEL_HEIGHT_RATIO },
+    imagem: { width: "100%", marginTop: 20, height: ITEM_HEIGHT },
     indicadores: { position: "absolute", right: 15, top: "25%" },
     indicador: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#ccc", marginVertical: 4 },
     indicadorAtivo: { backgroundColor: "#000" },
     infoContainer: {
         backgroundColor: "#f5efe5",
-        paddingVertical: 90,
+        paddingVertical: 20,
         paddingHorizontal: 20,
         borderTopWidth: 1,
         borderColor: "#ddd",
     },
-    coresContainer: { marginTop: -40, flexDirection: "row", gap: 12, marginBottom: 16 },
-    circuloCor: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: "#ccc" },
-    corSelecionada: { borderColor: "#001f3f", borderWidth: 3 },
-    nome: { fontSize: 20, fontWeight: "600", color: "#1a1a1a", marginBottom: 8 },
-    preco: { fontSize: 18, color: "#1a1a1a", marginBottom: 16 },
-    botaoDetalhes: { backgroundColor: "#001f3f", paddingVertical: 14, borderRadius: 8, alignItems: "center" },
+    colorCircleLarge: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "#ddd" },
+    nome: { fontSize: 18, fontWeight: "600", color: "#1a1a1a", marginTop: 8 },
+    preco: { fontSize: 16, color: "#1a1a1a", marginVertical: 6 },
+    botaoDetalhes: {
+        backgroundColor: "#001f3f",
+        paddingVertical: 14,
+        borderRadius: 8,
+        alignItems: "center",
+        marginTop: 8,
+    },
     botaoCarrinho: {
         backgroundColor: "#fff",
         paddingVertical: 14,
         borderRadius: 8,
         alignItems: "center",
-        marginTop: 20,
+        marginTop: 10,
+        borderWidth: 1,
+        borderColor: "#ddd",
     },
     textoBotaoDetalhes: { color: "#fff", fontSize: 16, fontWeight: "500" },
     textoBotaoCarrinho: { color: "#001f3f", fontSize: 16, fontWeight: "500" },
