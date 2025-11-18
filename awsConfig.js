@@ -5,9 +5,9 @@ import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 const dynamoDBClient = new DynamoDBClient({
   region: "us-east-1", 
   credentials: {
-    accessKeyId: "ASIAZYPPXAY4WLS646WN",
-    secretAccessKey: "Pq7pSc48uQusdesFcCWL+Cq4j5HRAjUukAmiKqFS",
-    sessionToken: "IQoJb3JpZ2luX2VjEPv//////////wEaCXVzLXdlc3QtMiJIMEYCIQCilVFH/STMm92TzDv7BWK/XCXHTuQmcBvetOLcTRLWiQIhAIF8SqfDTGUVoRycemJllbvM/rJnz0ox19lHb/Kj/KB9KsECCMT//////////wEQABoMNjcxMDU0NDk3MzM3IgzAuWZmInPo9R3Bz/cqlQIQow2oUaa+Y8uuE7nuXYuhfuP0pq90ZRKqh2qvrgVPNBMS1y9aH07pmxSGHJRaskS3FkxAct1Hayit5NDqKAZWsRnGFdCnIkJsoNkfTyEuBGo83n969h0Cl0rcZ//Yaw0qXR15DptqZCZNeEVDYUKTDbj6DfkqgtvmeKPAG4H40ZDciG6NiCz+aET6AQ0dShS4pqXZdAFAopnR/TW8iw+yo4oU6rdtg7TW95Cju50csbhG2g8f6++WbnaZHLBjhhQapKiad8eifn6JQ4l+Pvyk28yKngd7wakvFCLwdDWdLFOThs5MsTbMwshHJvd/JH4QnvJqimFlJpcT3G3zBM+87J2RqLmLNI7W9faUsrGCY+kbWvl+MO6p8cgGOpwBoywhYjnmC3wuP9zHX0GyEBdi4Iu+q6WRo2qPY7LxZ5SBFkonh/VKwu2pjhIaSxFE8vnwRR/iquHp3+K0BcOeI+G/Bk5v182/QOoiVLVAiQtNLaxwpRfc3fiKRvbppPJpiimlumYSFFikXKUz7+NSSpBeDGMVgWHbQP9ZJTDTsPEfZDNoLc157u4awjUW1tfBcOnb/TbQfFH88pWN",
+    accessKeyId: "ASIAZYPPXAY4UCK2QQ6I",
+    secretAccessKey: "qeu1sPTqc003+7r4wjfucUVnT3ZPPdzq88c2jvJL",
+    sessionToken: "IQoJb3JpZ2luX2VjEP///////////wEaCXVzLXdlc3QtMiJHMEUCIQD3V4T6wnd0meGwc00SObC4oQnhvIxZDr2pPS8zvQXbugIgX/50XtgozI+StJztL7psDgzezq13vXWHh7hYftKmwRYqwQIIyP//////////ARAAGgw2NzEwNTQ0OTczMzciDGk4v3KPb0JM+VFOsyqVAi9bLrU2nZ2Ll4NiHXTdDGhDREZVHeCFMVkhYKaWNlRrvdGXGdAQtyO8uEpobPhXCX4JvQHx+rWJvkCyiLGUIJ8+D7W3M2hJXIK5P8sW9B/j4pn5pVxao3E+hMc5Ax2ruSm7yvbHEiIg52Uc5bt+OqSVTwsnecbIMl22i5y8hjXou12WdjcHdUddHQV1aNGlSgc67F9Xeqh9deagvxWLfMrRz5H9VtOtARQHrn3vyIiiTwFOTCaExX6oEr3E+C8DR0RNxWzYDf8tXPCqL3izX4D+pWX6aS0/VNq7xmDTlyjJhNx0YnXUBoxmd9lxY68FdF54vmPacBfkqXl7C3kl7nvrxSws2Mh9SFWd3XKHq/SEToC7n2owl5XyyAY6nQEavOxmo8++q79XdvwJ53+JrFB9gmG52D4QGwo7rNA+sJKB244WwnyakgfCV8r/ovO+Ag5sgD0CkfLcoaKKdAEb4yA8egtMNq/Ngnr2s1LEohOaYF0Jj6qGrvKMuElEla1xx+Kipq+wwqSBR4ICcqcDejfqAFuken/oa+0ZqwAQRYgH+ZHpzkzKXZeBs5UaeATWcmRH5NlAgu0EJdkE",
   
   },
 });

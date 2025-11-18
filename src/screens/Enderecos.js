@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,55 +6,253 @@ import {
   ScrollView,
   Image,
   StyleSheet,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-const logoUrl = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4RCJUVETB%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T213109Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIF5r9n3SlIlwrWIih6WGQBbM0tGPsmu0u7PQwsqhz%2BPlAiEAzLnLGZ5HWc0lLBpQCkn8Ylt59i%2BhXca%2BCmKpOjpOQeIqgwMINxAAGgw2NzEwNTQ0OTczMzciDDFO1pKJNryxXbCVoyrgAmMmOaS%2BflOGH6QAoaH6tzhwkvCfOw1wekhWdxd6GUAlmfhHfXztqglXHvi2%2FQTpdwpgBqVFOX54Jr9tA%2FG%2BhCyO9tJQWvEGsSpNrutHIdNSftmozjutyzZYH6KLii%2BZaAP%2BCN3lYeN%2FB%2FJLvosSMsCPw7pxl6xzcYL4d6GTtqsKlK6Kcv%2BDODZWmZe3jPJKj1%2FjO%2B203fQN9Dtx1ggorUTAuKfTXzaCnYvkpRPCJ2F6052rKZnjND%2FGmyvflyFr7JnTgKF3HVI164zMpxtFN%2BspzP5UBHMui0wtJR7XtVQbr8rytz4f6DYoDmL4RVxX0uGr2%2BCK1b6tGzOiEdLBsgZ21Z0e4%2Fl%2FjG%2FuxejOUZfQwhJpHnY5kbMu1oyYUKvuKTsyAgktsLbNkMG1WuopiJXaQKj%2Fcl%2BH0x0KXYz3q8mttq8QUpqOmh9rnkc6DxEMGmIWHzB9rLtRvhN7uc9PWXQwgNzkxwY6hwKiJY9COGoIhCXtEd48aip89g9td2xbtd54Ojr2N4wznAW2oK1ufZ9OTiMIo8tuOL%2BUhJigtU3KxkJugU2JVjLAnDctb6AImhjY4ULdlqxP35%2FI3LHaM1t5Wiw7ltZ3laOJ0FsSDiNt693oroD3pSBxs%2B4R01ye3Ra62%2B7w7wkJxGLcPLOHraDS36OLrSQh4jOAjiOey%2BrKt7t6QaiJgFu4qRVWLA23wQzhYTMRNpTzaTzU26pewVPuRhE5y7X82XqNiNdum8vVwd2KO6ZHlOWxKDqhiOV4PnOoNYGuDj99HpOK6hE8UIThBdCQAshDTd6VKPUYsMEc%2FQZQWUvQHDSYA31Mc7nikQ%3D%3D&X-Amz-Signature=11eb26d8eb399b6d2f91c9721a92839350d8a784acefe0d988a547de57c03b6f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
+// ATENÇÃO: A URL é longa e pode expirar. Usando o começo como referência.
+const logoUrl = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?..."; 
 
-export default function PerfilScreen({ navigation }) {
+// Dados Fictícios (Mock) para Endereços
+const initialAddresses = [
+  {
+    id: "1",
+    street: "Rua Arthur Benedito de Oliveira Porto, 25",
+    details: "Jardim Rafael - CEP 12288-460 - Caçapava - SP",
+    isDefault: true,
+  },
+  {
+    id: "2",
+    street: "Av. Brasil, 1000",
+    details: "Centro - CEP 01000-000 - São Paulo - SP",
+    isDefault: false,
+  },
+];
+
+// ---------------------------------------------
+// 1. COMPONENTE DE MODAL CUSTOMIZADO (ALERTA)
+// ---------------------------------------------
+
+const CustomModal = ({
+  isVisible,
+  title,
+  message,
+  onCancel,
+  onConfirm,
+  confirmText = "CONFIRMAR",
+  isAlert = false, // Se for true, esconde o botão CANCELAR
+}) => {
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onCancel}
+    >
+      {/* Background Escurecido */}
+      <View style={modalStyles.centeredView}>
+        {/* Conteúdo do Modal (a caixa branca) */}
+        <View style={modalStyles.modalView}>
+          
+          {/* Ícone (simulando sucesso ou aviso) */}
+          {isAlert && (
+            <Ionicons
+              name={title.includes("Sucesso") || title.includes("Cadastrado") ? "checkmark-circle" : "warning"}
+              size={40}
+              color={title.includes("Sucesso") || title.includes("Cadastrado") ? "#001f3f" : "#C4413B"}
+              style={{ marginBottom: 15 }}
+            />
+          )}
+
+          <Text style={modalStyles.modalTitle}>{title}</Text>
+          <Text style={modalStyles.modalMessage}>{message}</Text>
+
+          <View style={modalStyles.buttonContainer}>
+            {/* Botão Cancelar */}
+            {!isAlert && (
+              <TouchableOpacity
+                style={[modalStyles.button, modalStyles.buttonCancel]}
+                onPress={onCancel}
+              >
+                <Text style={modalStyles.textCancel}>CANCELAR</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Botão Confirmar */}
+            <TouchableOpacity
+              style={[
+                modalStyles.button,
+                modalStyles.buttonConfirm,
+                isAlert ? { width: '80%', marginHorizontal: '10%' } : null,
+              ]}
+              onPress={onConfirm}
+            >
+              <Text style={modalStyles.textConfirm}>{confirmText}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+
+// ---------------------------------------------
+// 2. TELA PRINCIPAL: EnderecosScreen
+// ---------------------------------------------
+
+export default function EnderecosScreen({ navigation }) {
+  const [addresses, setAddresses] = useState(initialAddresses);
+  
+  // Estado para controlar a visibilidade e o conteúdo do modal
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({});
+
+  // --- Funções de Controle do Modal ---
+
+  const showModal = (config) => {
+    setModalConfig(config);
+    setIsModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setIsModalVisible(false);
+    setModalConfig({});
+  };
+
+  // --- Funções de Ação com Modal ---
+
+  const handleDelete = (addressId) => {
+    showModal({
+      title: "Excluir Endereço",
+      message: "Tem certeza que deseja remover este endereço?",
+      onConfirm: () => {
+        setAddresses(addresses.filter((addr) => addr.id !== addressId));
+        closeModal();
+        // Feedback de sucesso
+        showModal({
+            title: "Sucesso!",
+            message: "Endereço excluído com sucesso.",
+            confirmText: "OK",
+            onConfirm: closeModal,
+            isAlert: true, 
+        });
+      },
+      onCancel: closeModal,
+    });
+  };
+
+  const handleEdit = (addressId) => {
+    // Na aplicação real, você faria navigation.navigate("EditarEndereco", { addressId });
+
+    // SIMULAÇÃO: Alerta de Edição Concluída
+    showModal({
+        title: "Edição Concluída",
+        message: "As alterações no endereço foram salvas com sucesso.",
+        confirmText: "FECHAR",
+        onConfirm: closeModal,
+        isAlert: true,
+    });
+  };
+
+  const handleCadastrar = () => {
+    // Na aplicação real, você faria navigation.navigate("CadastrarEndereco");
+
+    // SIMULAÇÃO: Confirmação de Cadastro
+    showModal({
+        title: "Endereço Cadastrado",
+        message: "Seu novo endereço foi salvo com sucesso.",
+        confirmText: "OK",
+        onConfirm: closeModal,
+        isAlert: true, 
+    });
+  };
+  
+  // --- Componente de Endereço Individual ---
+  const AddressBox = ({ address }) => (
+    <View style={styles.addressBox}>
+      {address.isDefault && (
+        <View style={styles.defaultTag}>
+          <Text style={styles.defaultTagText}>Padrão</Text>
+        </View>
+      )}
+      <Text style={styles.addressTitle}>{address.street}</Text>
+      <Text style={styles.addressDetails}>{address.details}</Text>
+
+      <View style={styles.divider} />
+
+      <View style={styles.addressActions}>
+        {/* Botão de Excluir */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleDelete(address.id)} 
+        >
+          <Ionicons name="trash-outline" size={18} color="#C4413B" style={{ marginRight: 6 }} />
+          <Text style={[styles.actionButtonText, { color: '#C4413B' }]}>Excluir</Text>
+        </TouchableOpacity>
+
+        {/* Botão de Editar */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleEdit(address.id)}
+        >
+          <Ionicons name="pencil-outline" size={18} color="#001f3f" style={{ marginRight: 6 }} />
+          <Text style={styles.actionButtonText}>Editar</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+    >
+      {/* O CustomModal é renderizado no topo */}
+      <CustomModal
+        isVisible={isModalVisible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onCancel={modalConfig.onCancel}
+        onConfirm={modalConfig.onConfirm}
+        confirmText={modalConfig.confirmText}
+        isAlert={modalConfig.isAlert}
+      />
+      
       {/* Cabeçalho */}
       <View style={styles.header}>
-       <TouchableOpacity onPress={() => navigation.navigate("Tabs", { screen: "Perfil" })}>
-        <Ionicons name="arrow-back" size={22} color="#001f3f" />
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#001f3f" />
+        </TouchableOpacity>
 
         <Text style={styles.title}>Endereços</Text>
-        <Image source={{uri: logoUrl}} style={styles.logo} />
+        <Image source={{ uri: logoUrl }} style={styles.logo} />
       </View>
 
-      {/* Conteúdo */}
+      {/* Conteúdo: Lista de Endereços */}
       <View style={styles.content}>
-        <View style={styles.addressBox}>
-          <Text style={styles.addressTitle}>
-            Rua Arthur Benedito de Oliveira Porto, 25
-          </Text>
-          <Text style={styles.addressDetails}>
-            Jardim Rafael - CEP 12288-460 - Caçapava - SP
-          </Text>
+        {addresses.map((address) => (
+          <AddressBox key={address.id} address={address} />
+        ))}
 
-          <View style={styles.divider} />
-
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => navigation.navigate("EditarEndereco")}
-          >
-            <Ionicons name="pencil-outline" size={18} color="#001f3f" style={{ marginRight: 6 }} />
-            <Text style={styles.editButtonText}>Editar Endereço</Text>
-          </TouchableOpacity>
-        </View>
-
-       <TouchableOpacity
+        {/* Botão para Cadastrar Novo Endereço */}
+        <TouchableOpacity
           style={styles.saveButton}
-          onPress={() => navigation.navigate("CadastrarEndereco")}
+          onPress={handleCadastrar}
         >
+          <Ionicons name="add-circle-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
           <Text style={styles.saveButtonText}>Cadastrar Novo Endereço</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
 }
+
+// ---------------------------------------------
+// 3. ESTILOS DA TELA
+// ---------------------------------------------
 
 const styles = StyleSheet.create({
   container: {
@@ -74,21 +272,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    marginBottom: 40,
+    marginBottom: 20,
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#001f3f",
-    marginRight:120,
   },
   logo: {
-    width: 70,
-    height: 60,
+    width: 60,
+    height: 50,
     resizeMode: "contain",
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
   },
   addressBox: {
     backgroundColor: "#fff",
@@ -96,13 +293,30 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     padding: 15,
-    marginBottom: 20,
+    marginBottom: 15,
+    position: 'relative',
+  },
+  defaultTag: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#001f3f',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderTopRightRadius: 8,
+    borderBottomLeftRadius: 8,
+  },
+  defaultTagText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   addressTitle: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#001f3f",
     marginBottom: 5,
+    marginTop: 10,
   },
   addressDetails: {
     fontSize: 14,
@@ -110,30 +324,110 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#ccc",
+    backgroundColor: "#eee",
     marginVertical: 12,
   },
-  editButton: {
+  addressActions: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  actionButton: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "center",
+    padding: 8,
+    borderRadius: 4,
   },
-  editButtonText: {
+  actionButtonText: {
     color: "#001f3f",
     fontWeight: "bold",
     fontSize: 15,
   },
   saveButton: {
+    flexDirection: "row",
     backgroundColor: "#001f3f",
     padding: 14,
     borderRadius: 6,
     alignItems: "center",
-    width: 250,
-    alignSelf: "center",
+    justifyContent: "center",
+    marginTop: 20,
+    alignSelf: "stretch",
   },
   saveButtonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+  },
+});
+
+// ---------------------------------------------
+// 4. ESTILOS DO MODAL CUSTOMIZADO
+// ---------------------------------------------
+
+const modalStyles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: "85%",
+  },
+  modalTitle: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#001f3f", 
+  },
+  modalMessage: {
+    marginBottom: 25,
+    textAlign: "center",
+    fontSize: 14,
+    color: "#333",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  button: {
+    borderRadius: 4,
+    padding: 12,
+    elevation: 2,
+    flex: 1,
+    marginHorizontal: 5,
+    alignItems: "center",
+  },
+  buttonCancel: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#A9A9A9",
+  },
+  buttonConfirm: {
+    backgroundColor: "#001f3f",
+  },
+  textCancel: {
+    color: "#333",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  textConfirm: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });
