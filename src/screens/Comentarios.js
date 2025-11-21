@@ -1,201 +1,361 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
+  TextInput,
+  Modal,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  DynamoDBClient,
+  PutItemCommand,
+  ScanCommand,
+} from "@aws-sdk/client-dynamodb";
+import { v4 as uuidv4 } from "uuid";
+import { dynamoDB } from "../../awsConfig";
 
-const logoUrl = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4RCJUVETB%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T213109Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIF5r9n3SlIlwrWIih6WGQBbM0tGPsmu0u7PQwsqhz%2BPlAiEAzLnLGZ5HWc0lLBpQCkn8Ylt59i%2BhXca%2BCmKpOjpOQeIqgwMINxAAGgw2NzEwNTQ0OTczMzciDDFO1pKJNryxXbCVoyrgAmMmOaS%2BflOGH6QAoaH6tzhwkvCfOw1wekhWdxd6GUAlmfhHfXztqglXHvi2%2FQTpdwpgBqVFOX54Jr9tA%2FG%2BhCyO9tJQWvEGsSpNrutHIdNSftmozjutyzZYH6KLii%2BZaAP%2BCN3lYeN%2FB%2FJLvosSMsCPw7pxl6xzcYL4d6GTtqsKlK6Kcv%2BDODZWmZe3jPJKj1%2FjO%2B203fQN9Dtx1ggorUTAuKfTXzaCnYvkpRPCJ2F6052rKZnjND%2FGmyvflyFr7JnTgKF3HVI164zMpxtFN%2BspzP5UBHMui0wtJR7XtVQbr8rytz4f6DYoDmL4RVxX0uGr2%2BCK1b6tGzOiEdLBsgZ21Z0e4%2Fl%2FjG%2FuxejOUZfQwhJpHnY5kbMu1oyYUKvuKTsyAgktsLbNkMG1WuopiJXaQKj%2Fcl%2BH0x0KXYz3q8mttq8QUpqOmh9rnkc6DxEMGmIWHzB9rLtRvhN7uc9PWXQwgNzkxwY6hwKiJY9COGoIhCXtEd48aip89g9td2xbtd54Ojr2N4wznAW2oK1ufZ9OTiMIo8tuOL%2BUhJigtU3KxkJugU2JVjLAnDctb6AImhjY4ULdlqxP35%2FI3LHaM1t5Wiw7ltZ3laOJ0FsSDiNt693oroD3pSBxs%2B4R01ye3Ra62%2B7w7wkJxGLcPLOHraDS36OLrSQh4jOAjiOey%2BrKt7t6QaiJgFu4qRVWLA23wQzhYTMRNpTzaTzU26pewVPuRhE5y7X82XqNiNdum8vVwd2KO6ZHlOWxKDqhiOV4PnOoNYGuDj99HpOK6hE8UIThBdCQAshDTd6VKPUYsMEc%2FQZQWUvQHDSYA31Mc7nikQ%3D%3D&X-Amz-Signature=11eb26d8eb399b6d2f91c9721a92839350d8a784acefe0d988a547de57c03b6f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
+const Comentarios = ({ route }) => {
+  const { productId } = route.params;  // ✔️ agora correto
 
-const PRIMARY_COLOR = "#052242";
-const BACKGROUND_COLOR = "#f3ece2";
-const CARD_BACKGROUND_COLOR = "#ded7cd";
+  const [comentarios, setComentarios] = useState([]);
+  const [media, setMedia] = useState(0);
 
-const mockReviews = [
-  {
-    id: 1,
-    title: "Conforto e performance em alto nível!",
-    rating: 5,
-    date: "SEP 08, 2025",
-    content:
-      "Comprei o Jordan Zion 4 e simplesmente superou todas as minhas expectativas! O tênis é extremamente confortável, o amortecimento faz muita diferença tanto no dia a dia quanto nas quadras, e o design é incrível — moderno e cheio de estilo. A estabilidade também é ótima, dá muita confiança nos movimentos rápidos.",
-  },
-  {
-    id: 2,
-    title: "Ótimo tênis, mas poderia ser mais leve",
-    rating: 3.5,
-    date: "SEP 08, 2025",
-    content:
-      "O Jordan Zion 4 é um tênis de altíssima qualidade! Muito confortável, com excelente amortecimento e um design bonito que chama atenção. A performance em quadra é realmente boa, trazendo firmeza nos movimentos. Só não dou 5 estrelas porque achei que poderia ser um pouco mais leve, mas ainda assim é uma ótima escolha e recomendo bastante",
-  },
-];
+  const [modalVisible, setModalVisible] = useState(false);
+  const [titulo, setTitulo] = useState("");
+  const [conteudo, setConteudo] = useState("");
+  const [rating, setRating] = useState(5);
 
-const renderStars = (rating) => {
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 !== 0;
-  const totalStars = 5;
-  let stars = [];
-  const starColor = PRIMARY_COLOR;
-  const starSize = 18;
+  // ---------------------------------------------------------
+  // BUSCAR COMENTÁRIOS DO PRODUTO
+  // ---------------------------------------------------------
+  const pegarComentarios = async () => {
+    try {
+      // Para eficiência, use Query em vez de Scan se productId for a chave de partição
+      // Assumindo que a tabela tem productId como chave de partição e id como chave de classificação
+      // Se não, ajuste conforme o esquema da tabela
+      const cmd = new ScanCommand({
+        TableName: "comentarios",
+        FilterExpression: "productId = :pid",
+        ExpressionAttributeValues: {
+          ":pid": { S: productId },
+        },
+      });
 
-  for (let i = 0; i < totalStars; i++) {
-    if (i < fullStars) {
-      stars.push(
-        <Ionicons key={i} name="star" size={starSize} color={starColor} />
-      );
-    } else if (i === fullStars && hasHalfStar) {
-      stars.push(
-        <Ionicons
-          key={i}
-          name="star-half-sharp"
-          size={starSize}
-          color={starColor}
-        />
-      );
-    } else {
-      stars.push(
-        <Ionicons
-          key={i}
-          name="star-outline"
-          size={starSize}
-          color={starColor}
-        />
-      );
+      const data = await dynamoDB.send(cmd);
+
+      const lista =
+        data.Items?.map((item) => ({
+          id: item.id.S,
+          productId: item.productId.S,
+          title: item.title?.S || "",  // Adicione fallback para evitar undefined
+          content: item.content?.S || "",
+          rating: Number(item.rating?.N || 0),
+          date: item.date?.S || "",
+        })) || [];
+
+      setComentarios(lista);
+      calcularMedia(lista);
+    } catch (e) {
+      console.log("ERRO AO BUSCAR:", e);
     }
-  }
-  return <View style={styles.starsContainer}>{stars}</View>;
-};
+  };
 
-const ReviewCard = ({ review }) => (
-  <View style={styles.reviewCard}>
-    <View style={styles.reviewHeader}>
-      <View style={styles.starsRow}>{renderStars(review.rating)}</View>
-      <Text style={styles.reviewDate}>{review.date}</Text>
+  useEffect(() => {
+    if (productId) {  // Adicione verificação para evitar chamadas desnecessárias
+      pegarComentarios();
+    }
+  }, [productId]);
+
+  // ---------------------------------------------------------
+  // CALCULAR MÉDIA
+  // ---------------------------------------------------------
+  const calcularMedia = (lista) => {
+    if (lista.length === 0) {
+      setMedia(0);
+      return;
+    }
+    const soma = lista.reduce((acc, c) => acc + c.rating, 0);
+    const m = soma / lista.length;
+    setMedia(Number(m.toFixed(1)));
+  };
+
+  // ---------------------------------------------------------
+  // SALVAR COMENTÁRIO
+  // ---------------------------------------------------------
+  const enviarComentario = async () => {
+    if (!productId) {
+      Alert.alert("Erro", "ID do produto não encontrado.");
+      return;
+    }
+    if (!titulo.trim() || !conteudo.trim()) {
+      Alert.alert("Erro", "Preencha todos os campos.");
+      return;
+    }
+
+    const novo = {
+      id: uuidv4(),
+      productId: productId,
+      title: titulo.trim(),  // Trim para remover espaços extras
+      content: conteudo.trim(),
+      rating: rating.toString(),
+      date: new Date().toISOString().split("T")[0],
+    };
+
+    try {
+      const cmd = new PutItemCommand({
+        TableName: "comentarios",
+        Item: {
+          id: { S: novo.id },
+          productId: { S: novo.productId },
+          title: { S: novo.title },
+          content: { S: novo.content },
+          rating: { N: novo.rating },
+          date: { S: novo.date },
+        },
+      });
+
+      await dynamoDB.send(cmd);
+
+      // atualizar
+      const atualizada = [novo, ...comentarios];
+      setComentarios(atualizada);
+      calcularMedia(atualizada);
+
+      // limpar
+      setTitulo("");
+      setConteudo("");
+      setRating(5);
+
+      setModalVisible(false);
+    } catch (e) {
+      console.log("ERRO AO ENVIAR:", e);
+      Alert.alert("Erro", "Não foi possível enviar o comentário. Verifique os dados.");
+    }
+  };
+
+  const renderRatingStars = () => (
+    <View style={{ flexDirection: "row", marginBottom: 10 }}>
+      {[1, 2, 3, 4, 5].map((num) => (
+        <TouchableOpacity key={num} onPress={() => setRating(num)}>
+          <Ionicons
+            name={num <= rating ? "star" : "star-outline"}
+            size={28}
+            color="#f1c40f"
+            style={{ marginRight: 4 }}
+          />
+        </TouchableOpacity>
+      ))}
     </View>
+  );
 
-    <Text style={styles.reviewTitle}>{review.title}</Text>
-    <Text style={styles.reviewContent}>{review.content}</Text>
-  </View>
-);
+  const ReviewCard = ({ review }) => (
+    <View style={styles.reviewCard}>
+      <View style={styles.reviewHeader}>
+        <Text style={styles.reviewDate}>{review.date}</Text>
+        <View style={{ flexDirection: "row" }}>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <Ionicons
+              key={n}
+              name={n <= review.rating ? "star" : "star-outline"}
+              size={18}
+              color="#052242"
+            />
+          ))}
+        </View>
+      </View>
 
-const Comentarios = () => {
+      <Text style={styles.reviewTitle}>{review.title}</Text>
+      <Text style={styles.reviewContent}>{review.content}</Text>
+    </View>
+  );
+
   return (
     <ScrollView style={styles.container}>
+      {/* MÉDIA FINAL DO PRODUTO */}
+      <View style={styles.mediaContainer}>
+        <Text style={styles.mediaTitulo}>Avaliação geral</Text>
+        <Text style={styles.mediaValor}>{media} ★</Text>
+      </View>
 
+      {/* LISTA */}
       <View style={styles.reviewsList}>
-        {mockReviews.map((review) => (
-          <ReviewCard key={review.id} review={review} />
+        {comentarios.map((c) => (
+          <ReviewCard key={c.id} review={c} />
         ))}
       </View>
 
-      <TouchableOpacity style={styles.loadMoreButton}>
-        <Text style={styles.loadMoreText}>Aguardando mais comentários</Text>
+      {/* BOTÃO MODAL */}
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={styles.addButtonText}>Adicionar comentário</Text>
       </TouchableOpacity>
 
-      <View style={styles.logoContainer}>
-        <View style = {styles.linhaLogotipo}></View>
-        <Image source={{uri: logoUrl}} style={{ width: 77, height: 77 }}/>
-        <View style = {styles.linhaLogotipo}></View>
-      </View>
+      {/* MODAL */}
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <View style={styles.modalBackground}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Novo comentário</Text>
 
-      <View style={{ height: 50 }} />
+            {renderRatingStars()}
+
+            <TextInput
+              placeholder="Título"
+              style={styles.input}
+              value={titulo}
+              onChangeText={setTitulo}
+            />
+
+            <TextInput
+              placeholder="Comentário..."
+              style={[styles.input, { height: 100 }]}
+              value={conteudo}
+              multiline
+              onChangeText={setConteudo}
+            />
+
+            <TouchableOpacity
+              style={styles.sendButton}
+              onPress={enviarComentario}
+            >
+              <Text style={styles.sendButtonText}>Enviar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
+
+// ESTILOS
+const PRIMARY_COLOR = "#052242";
+const BACKGROUND_COLOR = "#f3ece2";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: BACKGROUND_COLOR,
   },
-
-  reviewsList: {
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-  },
-  reviewCard: {
-    backgroundColor: CARD_BACKGROUND_COLOR,
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#EEEEEE",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-
-  starsContainer:{
-    flexDirection: "row",
-  },
-  reviewHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  mediaContainer: {
+    padding: 20,
     alignItems: "center",
-    marginBottom: 5,
   },
-  starsRow: {
-    flexDirection: "row",
-  },
-  reviewDate: {
-    fontSize: 12,
-    color: "#999999",
-  },
-  reviewTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: PRIMARY_COLOR,
-    marginBottom: 8,
-  },
-  reviewContent: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#333333",
-  },
-
-  loadMoreButton: {
-    backgroundColor: PRIMARY_COLOR,
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 20,
-    borderRadius: 5,
-    marginTop: 10,
-    marginBottom: 30,
-  },
-  loadMoreText: {
-    color: "#FFFFFF",
-    fontSize: 16, 
-    fontWeight: "bold",
-  },
-
-  logoContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  logoText: {
-    marginLeft: 5,
+  mediaTitulo: {
     fontSize: 18,
     fontWeight: "bold",
     color: PRIMARY_COLOR,
-    fontStyle: "italic",
+  },
+  mediaValor: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: PRIMARY_COLOR,
+    marginTop: 5,
   },
 
+  reviewsList: {
+    paddingHorizontal: 20,
+  },
+  reviewCard: {
+    backgroundColor: "#ded7cd",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 18,
+  },
 
-  linhaLogotipo:{
-    width: 150,
-    height: 2,
-    backgroundColor: "#00000025",
-    marginHorizontal: 10,
-  }
+  reviewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  reviewDate: {
+    color: "#555",
+    fontSize: 12,
+  },
+
+  reviewTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginTop: 8,
+    marginBottom: 4,
+    color: PRIMARY_COLOR,
+  },
+  reviewContent: {
+    fontSize: 14,
+    color: "#333",
+  },
+
+  addButton: {
+    backgroundColor: PRIMARY_COLOR,
+    padding: 15,
+    margin: 20,
+    borderRadius: 8,
+  },
+  addButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    padding: 20,
+  },
+
+  modalBox: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+  },
+
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+    color: PRIMARY_COLOR,
+  },
+
+  input: {
+    backgroundColor: "#f4f4f4",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+
+  sendButton: {
+    backgroundColor: PRIMARY_COLOR,
+    padding: 12,
+    borderRadius: 8,
+  },
+  sendButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+
+  cancelButton: {
+    marginTop: 10,
+  },
+  cancelButtonText: {
+    textAlign: "center",
+    color: "#d00",
+    fontWeight: "bold",
+  },
 });
 
 export default Comentarios;
