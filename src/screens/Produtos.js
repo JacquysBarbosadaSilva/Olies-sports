@@ -51,6 +51,7 @@ export default function Produtos() {
         cores: JSON.parse(item.cores.S),
         tamanhos: JSON.parse(item.tamanhos.S),
         imagensFlat: JSON.parse(item.imagens.S),
+        dataPublicacao: item.dataPublicacao?.S || null,
       }));
 
       setProdutos(items);
@@ -219,6 +220,7 @@ export default function Produtos() {
           cores: { S: JSON.stringify(product.cores) },
           tamanhos: { S: JSON.stringify(product.tamanhos) },
           imagens: { S: JSON.stringify(product.imagensFlat || []) },
+          dataPublicacao: { S: product.dataPublicacao },
         },
       };
 
@@ -257,6 +259,7 @@ export default function Produtos() {
     }
 
     const productId = Date.now().toString();
+    const dataPublicacao = new Date().toISOString().split("T")[0];
 
     const coresParaSalvar = [];
     const imagensFlat = [];
@@ -295,6 +298,7 @@ export default function Produtos() {
       cores: coresParaSalvar,
       tamanhos: tamanhosObj,
       imagensFlat,
+      dataPublicacao,
     };
 
     try {
@@ -468,9 +472,7 @@ export default function Produtos() {
               multiline
             />
 
-            <Text style={[styles.label, { marginTop: 12 }]}>
-              Público-alvo
-            </Text>
+            <Text style={[styles.label, { marginTop: 12 }]}>Público-alvo</Text>
 
             <View style={{ flexDirection: "row", gap: 8 }}>
               <TextInput
@@ -480,10 +482,7 @@ export default function Produtos() {
                 style={[styles.input, { flex: 1 }]}
               />
 
-              <TouchableOpacity
-      
-                onPress={handleAddPublico}
-              >
+              <TouchableOpacity onPress={handleAddPublico}>
                 <Text style={styles.tipoBtnpublico}>Adicionar</Text>
               </TouchableOpacity>
             </View>

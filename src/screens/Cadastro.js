@@ -7,252 +7,355 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Pressable,
   Image,
-  Modal,
-  FlatList,
-  TouchableWithoutFeedback,
   Alert,
-  Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { PutItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
+import bcrypt from "bcryptjs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import * as AWS from "../../awsConfig";
 
 const logo = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png";
 
 export default function TelaCadastro() {
   const navigation = useNavigation();
   const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [mostrarData, setMostrarData] = useState(false);
-  const [mostrarEstados, setMostrarEstados] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [dados, setDados] = useState({
-    email: "",
-    senha: "",
     nome: "",
-    sobrenome: "",
-    cpf: "",
-    dataNascimento: "",
+    email: "",
     telefone: "",
-    genero: "",
-    cep: "",
-    endereco: "",
-    numero: "",
-    complemento: "",
-    bairro: "",
-    cidade: "",
-    estado: "",
-    referencia: "",
+    senha: "",
   });
 
   const handleChange = (campo, valor) => {
     setDados((prev) => ({ ...prev, [campo]: valor }));
   };
 
-  // Gera id simples sem crypto
-  const gerarIdSimples = () => `${Date.now()}${Math.floor(Math.random() * 10000)}`;
+  // Validar email
+  const validarEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
 
-  // Hash "simulada" (não segura) apenas para não salvar texto cru
-  const gerarHashSimples = (senha) => "HASH_" + String(senha).split("").reverse().join("");
+  // Validar telefone (apenas números)
+  const validarTelefone = (telefone) => {
+    const regex = /^[0-9]{10,11}$/;
+    return regex.test(telefone.replace(/\D/g, ""));
+  };
 
-  // ---------- SALVAR LOCAL (AsyncStorage) - funciona no RN sem dependências nativas ----------
+  // Cadastrar e salvar no AsyncStorage
   const handleCadastro = async () => {
     try {
-      if (!dados.email || !dados.senha || !dados.nome) {
-        Alert.alert("Atenção", "Preencha os campos: Nome, Email e Senha.");
+      // Validações
+      if (!dados.nome.trim()) {
+        Alert.alert("Atenção", "Preencha o campo Nome.");
         return;
       }
+
+      if (!dados.email.trim()) {
+        Alert.alert("Atenção", "Preencha o campo Email.");
+        return;
+      }
+
+      if (!validarEmail(dados.email)) {
+        Alert.alert("Atenção", "Email inválido. Verifique o formato.");
+        return;
+      }
+
+      if (!dados.telefone.trim()) {
+        Alert.alert("Atenção", "Preencha o campo Telefone.");
+        return;
+      }
+
+      if (!validarTelefone(dados.telefone)) {
+        Alert.alert("Atenção", "Telefone inválido. Use 10 ou 11 dígitos.");
+        return;
+      }
+
+      if (!dados.senha.trim()) {
+        Alert.alert("Atenção", "Preencha o campo Senha.");
+        return;
+      }
+
+      if (dados.senha.length < 6) {
+        Alert.alert("Atenção", "Senha deve ter no mínimo 6 caracteres.");
+        return;
+      }
+
       setLoading(true);
 
-      // cria objeto simplificado do usuário
-      const usuario = {
-        id: gerarIdSimples(),
-        nome: dados.nome,
-        sobrenome: dados.sobrenome || "",
-        email: dados.email,
-        senhaHash: gerarHashSimples(dados.senha),
-        cpf: dados.cpf || "",
-        dataNascimento: dados.dataNascimento || "",
-        telefone: dados.telefone || "",
-        genero: dados.genero || "",
-        cep: dados.cep || "",
-        endereco: dados.endereco || "",
-        numero: dados.numero || "",
-        complemento: dados.complemento || "",
-        bairro: dados.bairro || "",
-        cidade: dados.cidade || "",
-        estado: dados.estado || "",
-        referencia: dados.referencia || "",
-        criadoEm: new Date().toISOString(),
+      // Criar objeto do usuário
+      // 1. Verificar se o e-mail já existe (Boa prática)
+      // Usamos ScanCommand ou QueryCommand (melhor se email for GSI/Index)
+      const emailCheckParams = {
+        TableName: "users-olies-sports",
+        FilterExpression: "email = :email",
+        ExpressionAttributeValues: {
+          ":email": { S: dados.email.toLowerCase().trim() },
+        },
       };
 
-      // lê lista existente
-      const raw = await AsyncStorage.getItem("usuarios_local");
-      const lista = raw ? JSON.parse(raw) : [];
+      const existingUsers = await AWS.dynamoDB.send(
+        new ScanCommand(emailCheckParams)
+      );
 
-      // adiciona e salva
-      lista.push(usuario);
-      await AsyncStorage.setItem("usuarios_local", JSON.stringify(lista));
+      if (existingUsers.Count > 0) {
+        setLoading(false);
+        Alert.alert("Erro", "Este e-mail já está cadastrado.");
+        return;
+      }
+
+      // 2. Criptografar a Senha (ESSENCIAL para segurança)
+      // Assumimos que você tem o bcrypt ou uma forma segura de hash
+      const hashedPassword = await bcrypt.hash(dados.senha, 10);
+
+
+      // 3. Preparar o Item para o DynamoDB
+      const novoUsuarioDB = {
+        id: { S: Date.now().toString() }, // ID como número (N) - use o mesmo tipo do seu GerenciarUsuariosScreen
+        nome: { S: dados.nome.trim() },
+        email: { S: dados.email.toLowerCase().trim() },
+        telefone: { S: dados.telefone.replace(/\D/g, "") },
+        senhaHash: { S: hashedPassword }, 
+        tipo: { S: "cliente" },
+        atualizadoEm: { S: new Date().toISOString() },
+        criadoEm: { S: new Date().toISOString() },
+      };
+
+      const putItemParams = {
+        TableName: "users-olies-sports",
+        Item: novoUsuarioDB,
+      };
+
+      // 4. ✅ SALVAR NO DYNAMODB
+      await AWS.dynamoDB.send(new PutItemCommand(putItemParams));
+
+      // 5. ✅ SALVAR NO ASYNCSTORAGE (após sucesso no DB)
+      // Criar objeto do usuário para salvar a sessão (sem a senha, apenas dados de login)
+      const usuarioLogado = {
+        id: novoUsuarioDB.id.N,
+        nome: novoUsuarioDB.nome.S,
+        email: novoUsuarioDB.email.S,
+        tipo: novoUsuarioDB.tipo.S,
+      };
+
+      await AsyncStorage.setItem(
+        "usuarioLogado",
+        JSON.stringify(usuarioLogado)
+      );
 
       setLoading(false);
-      Alert.alert("Sucesso", "Cadastro local realizado com sucesso!", [
-        { text: "OK", onPress: () => navigation.navigate("Login") },
+
+      Alert.alert("Sucesso!", "Cadastro realizado com sucesso!", [
+        {
+          text: "Ok",
+          onPress: () => {
+            navigation.navigate("Login");
+          },
+        },
       ]);
-    } catch (err) {
+
+      // Limpar form
+      setDados({ nome: "", email: "", telefone: "", senha: "" });
+    } catch (error) {
       setLoading(false);
-      console.error("Erro ao cadastrar (local):", err);
-      Alert.alert("Erro ao cadastrar", err?.message || String(err));
+      console.error("Erro ao cadastrar no DynamoDB:", error);
+      Alert.alert(
+        "Erro",
+        "Erro ao realizar cadastro. Verifique sua conexão e tente novamente!"
+      );
     }
   };
 
-  const estadosBrasil = [
-    "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
-    "MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN",
-    "RS","RO","RR","SC","SP","SE","TO",
-  ];
-
   return (
-    <ScrollView style={styles.container}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#F3ECE2" }}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <SafeAreaView style={{ backgroundColor: "#F3ECE2" }}>
         <View style={styles.header}>
-          <Image source={{ uri: logo }} style={styles.logo} resizeMode="contain" />
+          <Image
+            source={{ uri: logo }}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.criarConta}>Criar uma conta</Text>
         </View>
 
+        {/* Seção: Informações da conta */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Informações da conta</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Nome completo"
+            placeholderTextColor="#999"
+            value={dados.nome}
+            onChangeText={(v) => handleChange("nome", v)}
+            editable={!loading}
+          />
+
           <TextInput
             style={styles.input}
             placeholder="Email"
             keyboardType="email-address"
+            placeholderTextColor="#999"
             value={dados.email}
             onChangeText={(v) => handleChange("email", v)}
             autoCapitalize="none"
+            editable={!loading}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Telefone (10 ou 11 dígitos)"
+            keyboardType="phone-pad"
+            placeholderTextColor="#999"
+            value={dados.telefone}
+            onChangeText={(v) => handleChange("telefone", v)}
+            editable={!loading}
           />
 
           <View style={styles.senhaContainer}>
             <TextInput
-              style={[styles.input, { flex: 1 }]}
+              style={[styles.input, { flex: 1, marginBottom: 0 }]}
               placeholder="Senha"
+              placeholderTextColor="#999"
               secureTextEntry={!mostrarSenha}
               value={dados.senha}
               onChangeText={(v) => handleChange("senha", v)}
+              editable={!loading}
             />
             <TouchableOpacity
               onPress={() => setMostrarSenha(!mostrarSenha)}
               style={styles.olhoIcone}
+              disabled={loading}
             >
-              <Ionicons name={mostrarSenha ? "eye-off-outline" : "eye-outline"} size={22} color="#555" />
+              <Ionicons
+                name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
+                size={22}
+                color="#555"
+              />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dados pessoais</Text>
-          <TextInput style={styles.input} placeholder="Nome" value={dados.nome} onChangeText={(v) => handleChange("nome", v)} />
-          <TextInput style={styles.input} placeholder="Sobrenome" value={dados.sobrenome} onChangeText={(v) => handleChange("sobrenome", v)} />
-          <TextInput style={styles.input} placeholder="CPF" keyboardType="numeric" value={dados.cpf} onChangeText={(v) => handleChange("cpf", v)} />
-
-          <TouchableOpacity onPress={() => setMostrarData(true)}>
-            <TextInput style={styles.input} placeholder="Data de nascimento" editable={false} value={dados.dataNascimento} />
-          </TouchableOpacity>
-
-          {mostrarData && (
-            <DateTimePicker
-              mode="date"
-              value={new Date()}
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={(event, date) => {
-                setMostrarData(false);
-                if (date) handleChange("dataNascimento", date.toLocaleDateString("pt-BR"));
-              }}
-            />
+        {/* Botão Cadastrar */}
+        <TouchableOpacity
+          style={[styles.botao, loading && styles.botaoDisabled]}
+          onPress={handleCadastro}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="large" color="#fff" />
+          ) : (
+            <Text style={styles.textoBotao}>Cadastrar</Text>
           )}
-
-          <TextInput style={styles.input} placeholder="Telefone de contato" keyboardType="phone-pad" value={dados.telefone} onChangeText={(v) => handleChange("telefone", v)} />
-
-          <Text style={styles.label}>Gênero</Text>
-          <View style={styles.generoContainer}>
-            <Pressable style={styles.optionContainer} onPress={() => handleChange("genero", "Masculino")}>
-              <View style={[styles.outerCircle, dados.genero === "Masculino" && styles.outerCircleSelecionado]}>
-                {dados.genero === "Masculino" && <View style={styles.innerCircle} />}
-              </View>
-              <Text style={styles.generoTexto}>Masculino</Text>
-            </Pressable>
-
-            <Pressable style={styles.optionContainer} onPress={() => handleChange("genero", "Feminino")}>
-              <View style={[styles.outerCircle, dados.genero === "Feminino" && styles.outerCircleSelecionado]}>
-                {dados.genero === "Feminino" && <View style={styles.innerCircle} />}
-              </View>
-              <Text style={styles.generoTexto}>Feminino</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Endereço</Text>
-          <TextInput style={styles.input} placeholder="CEP" keyboardType="numeric" value={dados.cep} onChangeText={(v) => handleChange("cep", v)} />
-          <TextInput style={styles.input} placeholder="Endereço" value={dados.endereco} onChangeText={(v) => handleChange("endereco", v)} />
-          <TextInput style={styles.input} placeholder="Número" keyboardType="numeric" value={dados.numero} onChangeText={(v) => handleChange("numero", v)} />
-          <TextInput style={styles.input} placeholder="Complemento (opcional)" value={dados.complemento} onChangeText={(v) => handleChange("complemento", v)} />
-          <TextInput style={styles.input} placeholder="Bairro" value={dados.bairro} onChangeText={(v) => handleChange("bairro", v)} />
-          <TextInput style={styles.input} placeholder="Cidade" value={dados.cidade} onChangeText={(v) => handleChange("cidade", v)} />
-
-          <TouchableOpacity onPress={() => setMostrarEstados(true)}>
-            <TextInput style={styles.input} placeholder="Estado" editable={false} value={dados.estado} />
-          </TouchableOpacity>
-
-          <Modal visible={mostrarEstados} transparent animationType="slide">
-            <TouchableWithoutFeedback onPress={() => setMostrarEstados(false)}>
-              <View style={styles.modalFundo}>
-                <View style={styles.modalContainer}>
-                  <FlatList data={estadosBrasil} keyExtractor={(item) => item} renderItem={({ item }) => (
-                    <TouchableOpacity onPress={() => { handleChange("estado", item); setMostrarEstados(false); }}>
-                      <Text style={styles.estadoItem}>{item}</Text>
-                    </TouchableOpacity>
-                  )} />
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </Modal>
-
-          <TextInput style={styles.input} placeholder="Ponto de referência (opcional)" value={dados.referencia} onChangeText={(v) => handleChange("referencia", v)} />
-        </View>
-
-        <TouchableOpacity style={styles.botao} onPress={handleCadastro} disabled={loading}>
-          <Text style={styles.textoBotao}>{loading ? "Cadastrando..." : "Cadastrar"}</Text>
         </TouchableOpacity>
+
+        {/* Link para Login */}
+        <View style={styles.loginContainer}>
+          <Text style={styles.loginText}>Já tem uma conta? </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Login")}
+            disabled={loading}
+          >
+            <Text style={styles.loginLink}>Faça login</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 50 }} />
       </SafeAreaView>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: "#F3ECE2", padding: 20 },
-  header: { alignItems: "center", marginTop: 20, marginBottom: 35 },
-  logo: { width: 290, height: 290 },
-  criarConta: { fontSize: 40, fontWeight: "700", color: "#052242", textAlign: "center", marginBottom: 20 },
-  section: { marginBottom: 30 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#052242", marginBottom: 10 },
-  input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#ccc", borderRadius: 6, height: 60, paddingHorizontal: 12, fontSize: 15, color: "#052242", marginBottom: 15 },
-  senhaContainer: { flexDirection: "row", alignItems: "center" },
-  olhoIcone: { position: "absolute", right: 15 },
-  label: { fontSize: 16, fontWeight: "bold", color: "#052242", marginBottom: 8 },
-  generoContainer: { flexDirection: "row", alignItems: "center", gap: 40, marginTop: 6 },
-  optionContainer: { flexDirection: "row", alignItems: "center", gap: 6 },
-  outerCircle: { borderWidth: 2, borderColor: "#555", borderRadius: 15, width: 22, height: 22, alignItems: "center", justifyContent: "center" },
-  outerCircleSelecionado: { borderColor: "#555", backgroundColor: "#fff" },
-  innerCircle: { width: 12, height: 12, borderRadius: 6, backgroundColor: "#B1B1B1" },
-  generoTexto: { fontSize: 15, color: "#052242", fontWeight: "bold" },
-  botao: { backgroundColor: "#052242", height: 60, width: 250, alignSelf: "center", justifyContent: "center", borderRadius: 8, marginBottom: 100 },
-  textoBotao: { color: "#FFF", textAlign: "center", fontSize: 24, fontWeight: "bold" },
-  modalFundo: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
-  modalContainer: { backgroundColor: "#fff", borderRadius: 10, width: "80%", maxHeight: "60%", padding: 20 },
-  estadoItem: { fontSize: 18, paddingVertical: 10, borderBottomWidth: 1, borderColor: "#ddd", textAlign: "center" },
+  container: {
+    flex: 1,
+    backgroundColor: "#F3ECE2",
+    padding: 20,
+  },
+  header: {
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 35,
+  },
+  logo: {
+    width: 150,
+    height: 150,
+  },
+  criarConta: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#052242",
+    textAlign: "center",
+    marginTop: 15,
+  },
+  section: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#052242",
+    marginBottom: 15,
+  },
+  input: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    height: 50,
+    paddingHorizontal: 15,
+    fontSize: 15,
+    color: "#052242",
+    marginBottom: 15,
+  },
+  senhaContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
+  },
+  olhoIcone: {
+    position: "absolute",
+    right: 15,
+    padding: 10,
+  },
+  botao: {
+    backgroundColor: "#052242",
+    height: 55,
+    width: "100%",
+    justifyContent: "center",
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  botaoDisabled: {
+    opacity: 0.6,
+  },
+  textoBotao: {
+    color: "#FFF",
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  loginContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loginText: {
+    fontSize: 15,
+    color: "#052242",
+  },
+  loginLink: {
+    fontSize: 15,
+    color: "#052242",
+    fontWeight: "bold",
+    textDecorationLine: "underline",
+  },
 });
-
-const estadosBrasil = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];

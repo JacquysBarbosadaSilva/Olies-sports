@@ -1,498 +1,644 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-    View,
-    Text,
-    StyleSheet,
-    TextInput,
-    Image,
-    ScrollView,
-    Pressable,
-    TouchableOpacity,
-    Dimensions,
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Image,
+  ScrollView,
+  Pressable,
+  TouchableOpacity,
+  Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { useFonts } from "expo-font";
-// Não precisamos mais do Ionicons, mas o mantemos caso seja necessário para outros componentes.
-import { Ionicons } from '@expo/vector-icons'; 
+import { Ionicons } from "@expo/vector-icons";
+import { ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
+import { ScanCommand } from "@aws-sdk/client-dynamodb";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import * as AWS from "../../awsConfig";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Obtém a largura da tela para dimensionar o banner
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
-// --- 1. Definição de URLs e Dados (MANTIDOS) ---
+const dynamoDB = AWS.dynamoDB;
+const s3 = AWS.s3;
 
-const bannerUrls = [
-    "https://olies-ports.s3.us-east-1.amazonaws.com/img/Banner%20Olie%27s%20Sportes.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4TBA33C32%2F20251118%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251118T125203Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEP3%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIQC61lObM9ncKWc3quq5OXPx20P%2Fi8VVbO0N0JsMfYnyGQIgBsZpapqAgli7uctWRuWyo5QCIQrDt3SF2%2Fy9dVvClI8qjAMIxv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAAGgw2NzEwNTQ0OTczMzciDAT59gVZ6%2F9eNkHaJCrgAgXIZuQD78Pgzjk336nxRTU5knOOxMH%2FoeHDBhqRCNPG%2F%2BFM8mat9s8FRgKYbpGSpZ5zC3ka4O0Ohdupg5XzYMtFC4JkbMTwbiyMb3du1ZEm27ZKdCiyvGh5sWHs1JBctxKj5DP0ftMK2kdUVpmaCu4VeMtLEbSRJ6mce9rzk7%2FduAzudhSdYbPuu%2B0eUt6ABdm0SZE9gKde0hdkU6%2B759L0aIgZBfrD6RoHhVInUQIH097FvON%2Fc0h9%2FSZpVF955t6ZmR6Nafas7%2FWW6WDKOkpY%2FMETSJ8POtEUyAvL41HyrCxaqtvpOBnrrNu7er8oY9n8Ht%2FJyV6e4ORCY%2B%2Br19MrhG5Cu8KMn9gp0T3DheuKc3fruUfen%2FDsakl0IXZPIam0z1sXeyp5VVlE%2FNlBlU9X%2BJ7TMm68sJLnUhcij21uFkmUNnlzHaiikiI5hXZBB4kD3sxrSHMvsTOkUJ%2F66Xsw7qnxyAY6hwJheseGqrZWZGgRUVjX3%2BeHEwKWtd4yGK8ho7%2BSHSo2uzkBfiMAPXeSHuT1ZRyWZk1mEV0DrPfycQZ0XirEu6H95b2AYFD2tlNLqpLpcD8Rzm76LxjAqPWWHCzNkJBiVkoFUT6AqVcDwCcnSUWTeyEFHSrYZmCKc1zg9ch2bQ2LnKrpa6xJBBFqQ4s3VTUspbmOFOXMfQJdLlHGBkh8OGwyecY5S6aOrQHau8%2BmhCFjmL4VF%2FWSPebEQFM12k88PnXgauko1YIbdahRbvB48SfLGvfOIn6XHsPACBNyvke2kTUxQ39fEf9LzZSLe%2BD0R87Zy%2Bc2gtZJXTyD5lLq9jYXvE4yj7o5JQ%3D%3D&X-Amz-Signature=ebd3a41cfc51f08ee6adbce02a30984a21d4e999f982ca5c6e46c1a70faceea2&X-Amz-SignedHeaders=host&response-content-disposition=inline",
-    "https://olies-ports.s3.us-east-1.amazonaws.com/img/banner%20olie%27s%20sports.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4TBA33C32%2F20251118%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251118T125253Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEP3%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIQC61lObM9ncKWc3quq5OXPx20P%2Fi8VVbO0N0JsMfYnyGQIgBsZpapqAgli7uctWRuWyo5QCIQrDt3SF2%2Fy9dVvClI8qjAMIxv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAAGgw2NzEwNTQ0OTczMzciDAT59gVZ6%2F9eNkHaJCrgAgXIZuQD78Pgzjk336nxRTU5knOOxMH%2FoeHDBhqRCNPG%2F%2BFM8mat9s8FRgKYbpGSpZ5zC3ka4O0Ohdupg5XzYMtFC4JkbMTwbiyMb3du1ZEm27ZKdCiyvGh5sWHs1JBctxKj5DP0ftMK2kdUVpmaCu4VeMtLEbSRJ6mce9rzk7%2FduAzudhSdYbPuu%2B0eUt6ABdm0SZE9gKde0hdkU6%2B759L0aIgZBfrD6RoHhVInUQIH097FvON%2Fc0h9%2FSZpVF955t6ZmR6Nafas7%2FWW6WDKOkpY%2FMETSJ8POtEUyAvL41HyrCxaqtvpOBnrrNu7er8oY9n8Ht%2FJyV6e4ORCY%2B%2Br19MrhG5Cu8KMn9gp0T3DheuKc3fruUfen%2FDsakl0IXZPIam0z1sXeyp5VVlE%2FNlBlU9X%2BJ7TMm68sJLnUhcij21uFkmUNnlzHaiikiI5hXZBB4kD3sxrSHMvsTOkUJ%2F66Xsw7qnxyAY6hwJheseGqrZWZGgRUVjX3%2BeHEwKWtd4yGK8ho7%2BSHSo2uzkBfiMAPXeSHuT1ZRyWZk1mEV0DrPfycQZ0XirEu6H95b2AYFD2tlNLqpLpcD8Rzm76LxjAqPWWHCzNkJBiVkoFUT6AqVcDwCcnSUWTeyEFHSrYZmCKc1zg9ch2bQ2LnKrpa6xJBBFqQ4s3VTUspbmOFOXMfQJdLlHGBkh8OGwyecY5S6aOrQHau8%2BmhCFjmL4VF%2FWSPebEQFM12k88PnXgauko1YIbdahRbvB48SfLGvfOIn6XHsPACBNyvke2kTUxQ39fEf9LzZSLe%2BD0R87Zy%2Bc2gtZJXTyD5lLq9jYXvE4yj7o5JQ%3D%3D&X-Amz-Signature=a1971782e3d47cd9d2adb6919681e55dc286954e7f256dd7a556a931ed211a29&X-Amz-SignedHeaders=host&response-content-disposition=inline",
-    "https://olies-ports.s3.us-east-1.amazonaws.com/img/banner%20Olie%27s%20Sportes%20%281%29.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4QCO577FP%2F20251118%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251118T152905Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEAAaCXVzLWVhc3QtMSJGMEQCIErgwJdisQN44pxysw0qn67ANrfCs0w8GDj30R6C6tg5AiAumUO%2BziKZAfCwvg6GrUV6EvPftT1Zpyzr0Egk2T73AyqMAwjJ%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAAaDDY3MTA1NDQ5NzMzNyIMEl%2B99qhr8T%2FCTL01KuACEhBJa6CFAq%2FWqQzqTQRmy6NY0cBrYkSvggKGZkkIDLj3LtlEvnHnMpMfUcz8bloGxmQMnHkq47pjfStZBgl8geu4X1uL3aj1wkplSteUMXrMpYsQa888usmJBT1kP%2Bl5yoGr13vpDAQ8mQEtC4SF55AHcvYwnw4ynCaGB2ULMbYA6QUq8d1cbjHgYUg8f9YoEUPRMX0w%2B3kU7iogRC2%2Fg5p%2Fz5IS0EWiEDhFWw4qqChSuP4rxoxP8ZYwbA%2FY1Q%2BLPVJ8GD9pW2JG5IFc0VOQbElDaY9aAbPVwUek2hQsTj7%2FXAnsh9NFBPAGt1hYXJ%2F9KkvTbpwtHE%2FjqPSPYk6R23ql0GVW9TN0a%2BH7d8XRjd5z%2BZ71xATZz763v444lBVP1ICO2EHGXYw8NvY1AUCSeD5hhwME1GsbLvktvNOgg%2Fb1h1lrAohMtKDwwlVFadScC87FDJew4ksf5bis52RTqDCXlfLIBjqIAsukXKPxDNWDYPmBGEsMeuiEIM8eHyireMnOgrJZX9T%2BUd7z7llNVyrpK1D36jFUgOsVoX6zZvOQ1k%2B8qB3wF5cZwVW0613pLE2SHfKwPCaSSka%2Bw%2BOKunAeDcJTm70BvC021ySs35fOqCMUhFpNxkpy4ePKoW7ZTMJdvaU09kityJlL2wbIDhLiZClxl9myMb0z1BktjeBbzkmndLkS%2FQ2aEye45wCefr%2FMK%2F44Ds6dCq5yHa9Gk7m9xY72I5%2FPN9BwC7IxvHSrM7muE5Xf4P1WSmQ3TilpllmtaEcnIIpdniDyKhQZtlojyrNbYLdF339feX1ABSSltNw2S8pVq5AL0KttHRp6Eg%3D%3D&X-Amz-Signature=2937e0e899b978beaf891245e97b4770e5198b849c66ad0018c3796cfbd3e9a5&X-Amz-SignedHeaders=host&response-content-disposition=inline",
-];
-
-const initialProducts = [
-    {
-        id: "p1",
-        name: "Smartband Samsung Galaxy Fit3 Grafite",
-        price: 289.99,
-        installments: "ou 2x de R$ 149,50",
-        discount: "-30% OFF",
-        image: require("../assets/imagem-produto1.jpg"),
-        precoProdutoText: "R$299,00 à vista",
-    },
-    {
-        id: "p2",
-        name: "Tênis Nike Air Jordan 1 Low SE",
-        price: 1139.99,
-        installments: "ou 10x de R$ 113,99",
-        discount: "-5% OFF",
-        image: require("../assets/imagem-produto2.png"),
-        precoProdutoText: "R$1139,99 à vista",
-    },
-    {
-        id: "p3",
-        name: "Tênis Nike Flex Experience Run 12",
-        price: 1199.99,
-        installments: "ou R$1079,99 no pix",
-        discount: "-10% OFF",
-        image: require("../assets/imagem-produto3.png"),
-        precoProdutoText: "R$ 1199,99 à vista",
-    },
-];
-
-const lastAccessedProducts = [
-    {
-        id: "p4",
-        name: "Tênis adidas RunFalcon 5 Masculino",
-        price: 279.99,
-        installments: "ou 4x de R$ 64,99",
-        discount: "-30% OFF",
-        image: require("../assets/imagem-produto4.png"),
-        precoProdutoText: "279,99 à vista",
-    },
-    {
-        id: "p5",
-        name: "Kit Meia Adidas Cano Baixo c/ 6 Pares - Br...",
-        price: 66.49,
-        installments: "ou 2x de R$ 33,29",
-        discount: "-53% OFF",
-        image: require("../assets/imagem-produto5.png"),
-        precoProdutoText: "66,49 à vista",
-    },
-    {
-        id: "p6",
-        name: "Smartband Samsung Galaxy Fit3 Grafite",
-        price: 299.0,
-        installments: "ou 2x de R$ 149,50",
-        discount: "-5% OFF",
-        image: require("../assets/imagem-produto1.jpg"),
-        precoProdutoText: "R$299,00 à vista",
-    },
-];
-
-const logoUrl =
-    "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4RCJUVETB%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T213109Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIF5r9n3SlIlwrWIih6WGQBbM0tGPsmu0u7PQwsqhz%2BPlAiEAzLnLGZ5HWc0lLBpQCkn8Ylt59i%2BhXca%2BCmKpOjpOQeIqgwMINxAAGgw2NzEwNTQ0OTczMzciDDFO1pKJNryxXbCVoyrgAmMmOaS%2BflOGH6QAoaH6tzhwkvCfOw1wekhWdxd6GUAlmfhHfXztqglXHvi2%2FQTpdwpgBqVFOX54Jr9tA%2FG%2BhCyO9tJQWvEGsSpNrutHIdNSftmozjutyzZYH6KLii%2BZaAP%2BCN3lYeN%2FB%2FJLvosSMsCPw7pxl6xzcYL4d6GTtqsKlK6Kcv%2BDODZWmZe3jPJKj1%2FjO%2B203fQN9Dtx1ggorUTAuKfTXzaCnYvkpRPCJ2F6052rKZnjND%2FGmyvflyFr7JnTgKF3HVI164zMpxtFN%2BspzP5UBHMui0wtJR7XtVQbr8rytz4f6DYoDmL4RVxX0uGr2%2BCK1b6tGzOiEdLBsgZ21Z0e4%2Fl%2FjG%2FuxejOUZfQwhJpHnY5kbMu1oyYUKvuKTsyAgktsLbNkMG1WuopiJXaQKj%2Fcl%2BH0x0KXYz3q8mttq8QUpqOmh9rnkc6DxEMGmIWHzB9rLtRvhN7uc9PWXQwgNzkxwY6hwKiJY9COGoIhCXtEd48aip89g9td2xbtd54Ojr2N4wznAW2oK1ufZ9OTiMIo8tuOL%2BUhJigtU3KxkJugU2JVjLAnDctb6AImhjY4ULdlqxP35%2FI3LHaM1t5Wiw7ltZ3laOJ0FsSDiNt693oroD3pSBxs%2B4R01ye3Ra62%2B7w7wkJxGLcPLOHraDS36OLrSQh4jOAjiOey%2BrKt7t6QaiJgFu4qRVWLA23wQzhYTMRNpTzaTzU26pewVPuRhE5y7X82XqNiNdum8vVwd2KO6ZHlOWxKDqhiOV4PnOoNYGuDj99HpOK6hE8UIThBdCQAshDTd6VKPUYsMEc%2FQZQWUvQHDSYA31Mc7nikQ%3D%3D&X-Amz-Signature=11eb26d8eb399b6d2f91c9721a92839350d8a784acefe0d988a547de57c03b6f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
-
-// --- Componente Card de Produto (MANTIDO) ---
+// --- Componente Card de Produto ---
 const ProductCard = ({ product, onAddToCart }) => (
-    <View style={styles.cards}>
-        <View style={[styles.desconto]}>
-            <View style={[styles.promoValor]}>
-                <Text style={[styles.fontKantumruySemiBold, styles.promocao]}>{product.discount}</Text>
-            </View>
-        </View>
-        <Image source={product.image} style={styles.image} resizeMode="contain" />
-        <View>
-            <Text style={[styles.fontKantumruySemiBold, styles.nomeProduto]}>{product.name}</Text>
-        </View>
-        <View>
-            <Pressable style={styles.botao} onPress={() => onAddToCart(product)}>
-                <Text style={[styles.textBotao, styles.fontKantumruySemiBold]}>Adicionar ao carrinho</Text>
-            </Pressable>
-        </View>
-        <View>
-            <Text style={[styles.fontKantumruySemiBold, styles.precoProduto]}>{product.precoProdutoText}</Text>
-            <Text style={[styles.fontKantumruySemiBold, styles.parcelaProduto]}>{product.installments}</Text>
-        </View>
+  <View style={styles.cards}>
+    <View style={[styles.desconto]}>
+      <View style={[styles.promoValor]}>
+        <Text style={[styles.fontKantumruySemiBold, styles.promocao]}>
+          {product.discount || "-0% OFF"}
+        </Text>
+      </View>
     </View>
+    <Image
+      source={{ uri: product.image }}
+      style={styles.image}
+      resizeMode="contain"
+      onError={() => console.log("Erro ao carregar imagem:", product.image)}
+    />
+    <View>
+      <Text style={[styles.fontKantumruySemiBold, styles.nomeProduto]}>
+        {product.name}
+      </Text>
+    </View>
+    <View>
+      <Pressable style={styles.botao} onPress={handleAddToCart}>
+        <Text style={[styles.textBotao, styles.fontKantumruySemiBold]}>
+          Adicionar ao carrinho
+        </Text>
+      </Pressable>
+    </View>
+    <View>
+      <Text style={[styles.fontKantumruySemiBold, styles.precoProduto]}>
+        {product.precoProdutoText}
+      </Text>
+      <Text style={[styles.fontKantumruySemiBold, styles.parcelaProduto]}>
+        {product.installments}
+      </Text>
+    </View>
+  </View>
 );
 
 // --- Componente Principal: HomeScreen ---
 export default function HomeScreen({ navigation }) {
-    const [search, setSearch] = useState("");
-    const [currentBannerIndex, setCurrentBannerIndex] = useState(0); 
-    
-    // Os Refs são mantidos, mas não são usados para rolagem manual com setas
-    const lancamentosScrollRef = useRef(null);
-    const acessosScrollRef = useRef(null);
-    
-    // As constantes de rolagem são mantidas, mas a função de scroll não é mais usada
-    const CARD_WIDTH = 165; 
-    const GAP = 20;
-    const SCROLL_AMOUNT = CARD_WIDTH + GAP; 
+  const [search, setSearch] = useState("");
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [banners, setBanners] = useState([]);
+  const [lancamentos, setLancamentos] = useState([]);
+  const [lastAccessedProducts, setLastAccessedProducts] = useState([]);
+  const [loadingBanners, setLoadingBanners] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
 
-    const [fontsLoaded] = useFonts({
-        "Kantumruy Pro SemiBold": require("../assets/fonts/KantumruyPro-SemiBold.ttf"),
-        "Kantumruy Pro Medium": require("../assets/fonts/KantumruyPro-Medium.ttf"),
-    });
+  const lancamentosScrollRef = useRef(null);
+  const acessosScrollRef = useRef(null);
 
-    // Lógica para o carrossel de banners (auto-scroll a cada 5 segundos) - MANTIDA
-    useEffect(() => {
-        if (bannerUrls.length > 1) {
-            const interval = setInterval(() => {
-                setCurrentBannerIndex(prevIndex => (prevIndex + 1) % bannerUrls.length);
-            }, 5000); 
+  const [fontsLoaded] = useFonts({
+    "Kantumruy Pro SemiBold": require("../assets/fonts/KantumruyPro-SemiBold.ttf"),
+    "Kantumruy Pro Medium": require("../assets/fonts/KantumruyPro-Medium.ttf"),
+  });
 
-            return () => clearInterval(interval); 
-        }
-    }, []); 
-    
-    // A função scrollProducts foi removida, pois as setas foram removidas.
-    
-    const handleAddToCart = (product) => {
-        navigation.navigate("Carrinho", { newItem: product });
-        console.log("Adicionado ao carrinho:", product.name);
+  // --- Verificar se o usuário está logado ---
+  useEffect(() => {
+    const checkUserLogin = async () => {
+      try {
+        const usuario = await AsyncStorage.getItem("usuarioLogado");
+        setIsUserLoggedIn(!!usuario);
+      } catch (error) {
+        console.error("Erro ao verificar login:", error);
+        setIsUserLoggedIn(false);
+      }
     };
 
-    if (!fontsLoaded) {
-        return null;
+    checkUserLogin();
+
+    // Verificar novamente quando a tela entra em foco
+    const unsubscribe = navigation.addListener("focus", checkUserLogin);
+    return unsubscribe;
+  }, [navigation]);
+
+  // --- Buscar Banners do S3 ---
+  useEffect(() => {
+    const fetchBannersFromS3 = async () => {
+      try {
+        setLoadingBanners(true);
+        const command = new ListObjectsV2Command({
+          Bucket: "banner-olies-sports",
+        });
+
+        const data = await s3.send(command);
+
+        if (data.Contents && data.Contents.length > 0) {
+          const bannerUrls = await Promise.all(
+            data.Contents.map(async (item) => {
+              const getObjectCommand = new GetObjectCommand({
+                Bucket: "banner-olies-sports",
+                Key: item.Key,
+              });
+              return await getSignedUrl(s3, getObjectCommand, {
+                expiresIn: 3600,
+              });
+            })
+          );
+
+          setBanners(bannerUrls);
+        } else {
+          console.log("Nenhum banner encontrado no bucket");
+        }
+        setLoadingBanners(false);
+      } catch (error) {
+        console.error("Erro ao buscar banners:", error);
+        setLoadingBanners(false);
+      }
+    };
+
+    fetchBannersFromS3();
+  }, []);
+
+  // --- Buscar Produtos do DynamoDB (últimos 30 dias) ---
+  useEffect(() => {
+    const fetchProductsFromDynamoDB = async () => {
+      try {
+        setLoadingProducts(true);
+
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const dataThirtyDaysAgo = thirtyDaysAgo.toISOString().split("T")[0];
+
+        console.log("Data de 30 dias atrás:", dataThirtyDaysAgo);
+
+        const command = new ScanCommand({
+          TableName: "produtos",
+          FilterExpression: "dataPublicacao >= :dataLimite",
+          ExpressionAttributeValues: {
+            ":dataLimite": { S: dataThirtyDaysAgo },
+          },
+          Limit: 50,
+        });
+
+        const data = await dynamoDB.send(command);
+
+        console.log("Produtos encontrados:", data.Items?.length || 0);
+
+        if (data.Items && data.Items.length > 0) {
+          const produtosFormatados = data.Items.map((item) => {
+            const preco = parseFloat(item.preco?.N || 0);
+            const imagensFlat = item.imagens ? JSON.parse(item.imagens.S) : [];
+            const primeiraImagem = imagensFlat.length > 0 ? imagensFlat[0] : "";
+
+            return {
+              id: item.id.S,
+              name: item.nome?.S || "Sem nome",
+              price: preco,
+              installments:
+                item.parcelamento?.S ||
+                `ou ${Math.ceil(preco / 100)}x de R$ ${(
+                  preco / Math.ceil(preco / 100)
+                ).toFixed(2)}`,
+              discount: item.desconto?.S || "-0% OFF",
+              image: primeiraImagem || "",
+              precoProdutoText: `R$ ${preco.toFixed(2)} à vista`,
+            };
+          });
+
+          console.log("Produtos formatados:", produtosFormatados.length);
+          setLancamentos(produtosFormatados);
+        } else {
+          console.log("Nenhum produto de lançamento encontrado");
+          setLancamentos([]);
+        }
+
+        setLoadingProducts(false);
+      } catch (error) {
+        console.error("Erro ao buscar produtos:", error);
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchProductsFromDynamoDB();
+  }, []);
+
+  // --- Carrossel de Banners (auto-scroll) ---
+  useEffect(() => {
+    if (banners.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentBannerIndex((prevIndex) => (prevIndex + 1) % banners.length);
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [banners]);
+
+  // --- Adicionar ao carrinho com verificação de autenticação ---
+  const handleAddToCart = () => {
+    if (!user) {
+      Alert.alert(
+        "Você não está logado",
+        "Para adicionar ao carrinho, faça login primeiro.",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Fazer login",
+            onPress: () => navigation.navigate("Login"),
+          },
+        ]
+      );
+      return;
     }
 
-    return (
-        <ScrollView contentContainerStyle={{ alignItems: "center" }} style={styles.container}>
-            {/* Área de Pesquisa e Logo */}
-            <View style={styles.searchContainer}>
-                <TextInput
-                    style={[styles.input, styles.fontKantumruy]}
-                    placeholder="Pesquisar..."
-                    value={search}
-                    onChangeText={setSearch}
-                    placeholderTextColor="#A3A3A3"
-                />
-                <Image source={{ uri: logoUrl }} style={styles.logo} />
-            </View>
-            
-            {/* Carrossel de Banner */}
-            <TouchableOpacity onPress={() => navigation.navigate("ListaDesejos")} style={styles.bannerContainer}>
-                {bannerUrls.length > 0 && ( 
-                    <Image
-                        source={{ uri: bannerUrls[currentBannerIndex] }} 
-                        style={styles.bannerImage}
-                        resizeMode="cover" 
-                    />
-                )}
-            </TouchableOpacity>
+    // Se estiver logado → adiciona ao carrinho
+    addToCart(produto);
+  };
 
-            {/* Indicadores de página do banner */}
-            <View style={styles.paginationContainer}>
-                {bannerUrls.map((_, index) => (
-                    <View
-                        key={index}
-                        style={[
-                            styles.paginationDot,
-                            currentBannerIndex === index ? styles.activeDot : styles.inactiveDot,
-                        ]}
-                    />
-                ))}
-            </View>
+  if (!fontsLoaded) {
+    return null;
+  }
 
-            {/* Categorias */}
-            <View style={styles.categoriesContainer}>
-                <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
-                    <View style={styles.categoryButton}>
-                        <View style={styles.categoryCircle}>
-                            <Image source={require("../assets/calcados.jpg")} style={styles.categoryIcon} />
-                        </View>
-                        <Text style={[styles.categoryText, styles.fontKantumruy]}>Calçados</Text>
-                    </View>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
-                    <View style={styles.categoryButton}>
-                        <View style={styles.categoryCircle}>
-                            <Image source={require("../assets/esportes.jpg")} style={styles.categoryIcon} />
-                        </View>
-                        <Text style={[styles.categoryText, styles.fontKantumruy]}>Esportes</Text>
-                    </View>
-                </TouchableOpacity>
-                <View style={styles.categoryButton}>
-                    <View style={styles.categoryCircle}>
-                        <Image source={require("../assets/acessorios.jpg")} style={styles.categoryIcon} />
-                    </View>
-                    <Text style={[styles.categoryText, styles.fontKantumruy]}>Acessórios</Text>
-                </View>
-                <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
-                    <View style={styles.categoryButton}>
-                        <View style={styles.categoryCircle}>
-                            <Image source={require("../assets/feminino-ico.jpg")} style={styles.categoryIcon} />
-                        </View>
-                        <Text style={[styles.categoryText, styles.fontKantumruy]}>Feminino</Text>
-                    </View>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
-                    <View style={styles.categoryButton}>
-                        <View style={styles.categoryCircle}>
-                            <Image source={require("../assets/vertodos.jpg")} style={styles.categoryIcon} />
-                        </View>
-                        <Text style={[styles.categoryText, styles.fontKantumruySemiBold]}>Ver todos</Text>
-                    </View>
-                </TouchableOpacity>
-            </View>
+  return (
+    <ScrollView
+      contentContainerStyle={{ alignItems: "center" }}
+      style={styles.container}
+    >
+      {/* Área de Pesquisa e Logo */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={[styles.input, styles.fontKantumruy]}
+          placeholder="Pesquisar..."
+          value={search}
+          onChangeText={setSearch}
+          placeholderTextColor="#A3A3A3"
+        />
+        <Image
+          source={{
+            uri: "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png",
+          }}
+          style={styles.logo}
+        />
+      </View>
 
-            {/* Cabeçalho Lançamentos */}
-            <View style={styles.lancamentosContainer}>
-                <Text style={[styles.lancamentosText, styles.fontKantumruyMedium]}>Lançamentos</Text>
-                <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
-                    <Text style={[styles.verTodos, styles.fontKantumruySemiBold]}>Ver todos</Text>
-                </TouchableOpacity>
-            </View>
+      {/* Carrossel de Banner */}
+      {loadingBanners ? (
+        <View style={styles.bannerContainer}>
+          <ActivityIndicator size="large" color="#052242" />
+        </View>
+      ) : banners.length > 0 ? (
+        <TouchableOpacity
+          onPress={() => navigation.navigate("ListaDesejos")}
+          style={styles.bannerContainer}
+        >
+          <Image
+            source={{ uri: banners[currentBannerIndex] }}
+            style={styles.bannerImage}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      ) : null}
 
-            {/* Carrossel de Lançamentos (Sem Setas) */}
-            <View style={styles.containerCarrossel}>
-                <ScrollView
-                    ref={lancamentosScrollRef} 
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.scrollContainer}
-                >
-                    {initialProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
-                    ))}
-                </ScrollView>
-            </View>
+      {/* Indicadores de página do banner */}
+      {banners.length > 1 && (
+        <View style={styles.paginationContainer}>
+          {banners.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.paginationDot,
+                currentBannerIndex === index
+                  ? styles.activeDot
+                  : styles.inactiveDot,
+              ]}
+            />
+          ))}
+        </View>
+      )}
 
-            {/* Cabeçalho Últimos Acessos */}
-            <View style={styles.contUltimosAcessos}>
-                <Text style={[styles.ultimosAcessosText, styles.fontKantumruyMedium]}>Últimos produtos acessados</Text>
+      {/* Categorias */}
+      <View style={styles.categoriesContainer}>
+        <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
+          <View style={styles.categoryButton}>
+            <View style={styles.categoryCircle}>
+              <Image
+                source={require("../assets/calcados.jpg")}
+                style={styles.categoryIcon}
+              />
             </View>
+            <Text style={[styles.categoryText, styles.fontKantumruy]}>
+              Calçados
+            </Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
+          <View style={styles.categoryButton}>
+            <View style={styles.categoryCircle}>
+              <Image
+                source={require("../assets/esportes.jpg")}
+                style={styles.categoryIcon}
+              />
+            </View>
+            <Text style={[styles.categoryText, styles.fontKantumruy]}>
+              Esportes
+            </Text>
+          </View>
+        </TouchableOpacity>
+        <View style={styles.categoryButton}>
+          <View style={styles.categoryCircle}>
+            <Image
+              source={require("../assets/acessorios.jpg")}
+              style={styles.categoryIcon}
+            />
+          </View>
+          <Text style={[styles.categoryText, styles.fontKantumruy]}>
+            Acessórios
+          </Text>
+        </View>
+        <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
+          <View style={styles.categoryButton}>
+            <View style={styles.categoryCircle}>
+              <Image
+                source={require("../assets/feminino-ico.jpg")}
+                style={styles.categoryIcon}
+              />
+            </View>
+            <Text style={[styles.categoryText, styles.fontKantumruy]}>
+              Feminino
+            </Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
+          <View style={styles.categoryButton}>
+            <View style={styles.categoryCircle}>
+              <Image
+                source={require("../assets/vertodos.jpg")}
+                style={styles.categoryIcon}
+              />
+            </View>
+            <Text style={[styles.categoryText, styles.fontKantumruySemiBold]}>
+              Ver todos
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
 
-            {/* Carrossel de Últimos Acessos (Sem Setas) */}
-            <View style={styles.containerCarrossel}>
-                <ScrollView
-                    ref={acessosScrollRef} 
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.scrollContainer}
-                >
-                    {lastAccessedProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
-                    ))}
-                </ScrollView>
-            </View>
+      {/* Cabeçalho Lançamentos */}
+      <View style={styles.lancamentosContainer}>
+        <Text style={[styles.lancamentosText, styles.fontKantumruyMedium]}>
+          Lançamentos
+        </Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
+          <Text style={[styles.verTodos, styles.fontKantumruySemiBold]}>
+            Ver todos
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Carrossel de Lançamentos */}
+      {loadingProducts ? (
+        <View style={[styles.containerCarrossel, { justifyContent: "center" }]}>
+          <ActivityIndicator size="large" color="#052242" />
+        </View>
+      ) : lancamentos.length > 0 ? (
+        <View style={styles.containerCarrossel}>
+          <ScrollView
+            ref={lancamentosScrollRef}
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContainer}
+          >
+            {lancamentos.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={handleAddToCart}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      ) : (
+        <View style={[styles.containerCarrossel, { justifyContent: "center" }]}>
+          <Text style={styles.fontKantumruy}>Nenhum lançamento disponível</Text>
+        </View>
+      )}
+
+      {/* Cabeçalho Últimos Acessos */}
+      <View style={styles.contUltimosAcessos}>
+        <Text style={[styles.ultimosAcessosText, styles.fontKantumruyMedium]}>
+          Últimos produtos acessados
+        </Text>
+      </View>
+
+      {/* Carrossel de Últimos Acessos */}
+      <View style={styles.containerCarrossel}>
+        <ScrollView
+          ref={acessosScrollRef}
+          horizontal={true}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContainer}
+        >
+          {lastAccessedProducts.length > 0 ? (
+            lastAccessedProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={handleAddToCart}
+              />
+            ))
+          ) : (
+            <Text style={styles.fontKantumruy}>Nenhum produto acessado</Text>
+          )}
         </ScrollView>
-    );
+      </View>
+    </ScrollView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        width: "100%",
-        backgroundColor: "#F3ECE2",
-    },
-    // Fontes
-    fontKantumruySemiBold: {
-        fontFamily: "Kantumruy Pro SemiBold",
-    },
-    fontKantumruyMedium: {
-        fontFamily: "Kantumruy Pro Medium",
-    },
-    // Input de pesquisa
-    input: {
-        width: "80%",
-        height: 40,
-        borderColor: "#ccc",
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 10,
-        backgroundColor: "#fff",
-    },
-    // Imagem do produto no card
-    image: {
-        width: "100%",
-        height: 70,
-        marginVertical: 20,
-    },
-    // Container de Pesquisa e Logo
-    searchContainer: {
-        flexDirection: "row",
-        width: "90%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-evenly",
-        height: 60,
-        marginTop: 40,
-        marginBottom: 10,
-    },
-    // Imagem da Logo
-    logo: {
-        width: 77,
-        height: 40,
-        marginLeft: 10,
-    },
-    // Estilos para o Carrossel de Banner
-    bannerContainer: {
-        width: width * 0.95, // Usa 95% da largura da tela
-        height: width * 0.95 * (293 / 440), // Mantém a proporção da imagem original (440x293)
-        alignSelf: "center",
-        borderRadius: 8,
-        overflow: "hidden", 
-    },
-    bannerImage: {
-        width: "100%",
-        height: "100%",
-    },
-    // Estilos de paginação (pontos) para o banner
-    paginationContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginTop: 10,
-        marginBottom: 8,
-    },
-    paginationDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginHorizontal: 4,
-    },
-    activeDot: {
-        backgroundColor: '#052242',
-    },
-    inactiveDot: {
-        backgroundColor: '#ccc',
-    },
-    
-    // Categorias
-    categoriesContainer: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-        alignItems: "center",
-        width: "100%",
-        paddingVertical: 18,
-        backgroundColor: "#F3ECE2",
-        marginBottom: 8,
-    },
-    categoryButton: {
-        alignItems: "center",
-    },
-    categoryCircle: {
-        backgroundColor: "#F7F6F3",
-        borderRadius: 40,
-        width: 60,
-        height: 60,
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: 6,
-    },
-    categoryIcon: {
-        width: 34,
-        height: 34,
-    },
-    categoryText: {
-        fontSize: 14,
-        color: "#A3A3A3",
-        fontWeight: "bold",
-        textAlign: "center",
-    },
-    // Lançamentos Header
-    lancamentosContainer: {
-        flexDirection: "row",
-        width: "90%",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: 20,
-    },
-    lancamentosText: {
-        fontSize: 18,
-        fontFamily: "Kantumruy Pro Medium",
-        color: "#9D9D9D",
-    },
-    verTodos: {
-        fontSize: 14,
-        color: "#052242",
-    },
-    // Cards de Produtos
-    cards: {
-        backgroundColor: "white",
-        height: 242,
-        width: 165,
-        padding: 2,
-        borderRadius: 10,
-        marginBottom: 30,
-        alignItems: "center",
-        marginTop: 5,
-        // IOS
-        shadowColor: "#000",
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 4,
-        //Android
-        elevation: 10,
-    },
-    promocao: {
-        backgroundColor: "#052242",
-        color: "white",
-        textAlign: "center",
-        width: 68,
-        padding: 1,
-        fontSize: 12,
-        borderRadius: 5,
-    },
-    desconto: {
-        width: "100%",
-        alignItems: "flex-start",
-        paddingLeft: 10,
-        paddingTop: 10,
-    },
-    promoValor: {
-        width: "100%",
-    },
-    nomeProduto: {
-        color: "#9D9D9D",
-        textAlign: "center",
-    },
-    precoProduto: {
-        color: "#696969",
-        textAlign: "center",
-        fontSize: 16,
-    },
-    parcelaProduto: {
-        color: "#A3A3A3",
-        textAlign: "center",
-        fontSize: 10,
-    },
-    botao: {
-        backgroundColor: "#fff",
-        borderColor: "#052242",
-        borderWidth: 1,
-        borderRadius: 5,
-        marginTop: 5,
-        marginBottom: 5,
-        alignItems: "center",
-        justifyContent: "center",
-        width: 100,
-        height: 19,
-    },
-    textBotao: {
-        color: "#052242",
-        fontSize: 10,
-    },
-    // Contêiner Carrossel de Produtos (Usado agora que as setas foram removidas)
-    containerCarrossel: {
-        width: '100%',
-        paddingVertical: 20,
-        backgroundColor: "#F3ECE2",
-    },
-    scrollContainer: {
-        paddingHorizontal: 10,
-        gap: 20,
-        marginLeft: 10,
-        paddingRight: 10, // Ajustado para remover o padding extra das setas
-    },
-    // Últimos Acessos Header
-    contUltimosAcessos: {
-        flexDirection: "row",
-        width: "90%",
-        justifyContent: "flex-start",
-        alignItems: "flex-start",
-    },
-    ultimosAcessosText: {
-        fontSize: 18,
-        fontFamily: "Kantumruy Pro Medium",
-        color: "#9D9D9D",
-    },
-    // Os estilos 'carouselWrapper', 'arrow', 'arrowLeft' e 'arrowRight' foram removidos.
+  container: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: "#F3ECE2",
+  },
+  fontKantumruySemiBold: {
+    fontFamily: "Kantumruy Pro SemiBold",
+  },
+  fontKantumruyMedium: {
+    fontFamily: "Kantumruy Pro Medium",
+  },
+  fontKantumruy: {
+    fontFamily: "Kantumruy Pro Medium",
+  },
+  input: {
+    width: "80%",
+    height: 40,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    backgroundColor: "#fff",
+  },
+  image: {
+    width: "100%",
+    height: 70,
+    marginVertical: 20,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    width: "90%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-evenly",
+    height: 60,
+    marginTop: 40,
+    marginBottom: 10,
+  },
+  logo: {
+    width: 77,
+    height: 40,
+    marginLeft: 10,
+  },
+  bannerContainer: {
+    width: width * 0.95,
+    height: width * 0.95 * (293 / 440),
+    alignSelf: "center",
+    borderRadius: 8,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  bannerImage: {
+    width: "100%",
+    height: "100%",
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  activeDot: {
+    backgroundColor: "#052242",
+  },
+  inactiveDot: {
+    backgroundColor: "#ccc",
+  },
+  categoriesContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: "100%",
+    paddingVertical: 18,
+    backgroundColor: "#F3ECE2",
+    marginBottom: 8,
+  },
+  categoryButton: {
+    alignItems: "center",
+  },
+  categoryCircle: {
+    backgroundColor: "#F7F6F3",
+    borderRadius: 40,
+    width: 60,
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  categoryIcon: {
+    width: 34,
+    height: 34,
+  },
+  categoryText: {
+    fontSize: 14,
+    color: "#A3A3A3",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  lancamentosContainer: {
+    flexDirection: "row",
+    width: "90%",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 20,
+  },
+  lancamentosText: {
+    fontSize: 18,
+    fontFamily: "Kantumruy Pro Medium",
+    color: "#9D9D9D",
+  },
+  verTodos: {
+    fontSize: 14,
+    color: "#052242",
+  },
+  cards: {
+    backgroundColor: "white",
+    height: 242,
+    width: 165,
+    padding: 2,
+    borderRadius: 10,
+    marginBottom: 30,
+    alignItems: "center",
+    marginTop: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 10,
+  },
+  promocao: {
+    backgroundColor: "#052242",
+    color: "white",
+    textAlign: "center",
+    width: 68,
+    padding: 1,
+    fontSize: 12,
+    borderRadius: 5,
+  },
+  desconto: {
+    width: "100%",
+    alignItems: "flex-start",
+    paddingLeft: 10,
+    paddingTop: 10,
+  },
+  promoValor: {
+    width: "100%",
+  },
+  nomeProduto: {
+    color: "#9D9D9D",
+    textAlign: "center",
+  },
+  precoProduto: {
+    color: "#696969",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  parcelaProduto: {
+    color: "#A3A3A3",
+    textAlign: "center",
+    fontSize: 10,
+  },
+  botao: {
+    backgroundColor: "#fff",
+    borderColor: "#052242",
+    borderWidth: 1,
+    borderRadius: 5,
+    marginTop: 5,
+    marginBottom: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 100,
+    height: 19,
+  },
+  textBotao: {
+    color: "#052242",
+    fontSize: 10,
+  },
+  containerCarrossel: {
+    width: "100%",
+    paddingVertical: 20,
+    backgroundColor: "#F3ECE2",
+  },
+  scrollContainer: {
+    paddingHorizontal: 10,
+    gap: 20,
+    marginLeft: 10,
+    paddingRight: 10,
+  },
+  contUltimosAcessos: {
+    flexDirection: "row",
+    width: "90%",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
+  ultimosAcessosText: {
+    fontSize: 18,
+    fontFamily: "Kantumruy Pro Medium",
+    color: "#9D9D9D",
+  },
 });
