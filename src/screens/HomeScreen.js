@@ -10,14 +10,16 @@ import {
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useFonts } from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 import { ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
-import { ScanCommand } from "@aws-sdk/client-dynamodb";
+import { ScanCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as AWS from "../../awsConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getLoggedUser } from "./getLoggedUser";
 
 const { width } = Dimensions.get("window");
 
@@ -46,7 +48,7 @@ const ProductCard = ({ product, onAddToCart }) => (
       </Text>
     </View>
     <View>
-      <Pressable style={styles.botao} onPress={handleAddToCart}>
+      <Pressable style={styles.botao} onPress={() => onAddToCart(product)}>
         <Text style={[styles.textBotao, styles.fontKantumruySemiBold]}>
           Adicionar ao carrinho
         </Text>
@@ -73,6 +75,7 @@ export default function HomeScreen({ navigation }) {
   const [loadingBanners, setLoadingBanners] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const [usuarioLogado, setUsuarioLogado] = useState(null);
 
   const lancamentosScrollRef = useRef(null);
   const acessosScrollRef = useRef(null);
@@ -87,9 +90,19 @@ export default function HomeScreen({ navigation }) {
     const checkUserLogin = async () => {
       try {
         const usuario = await AsyncStorage.getItem("usuarioLogado");
-        setIsUserLoggedIn(!!usuario);
+        if (usuario) {
+          const usuarioObj = JSON.parse(usuario);
+          setUsuarioLogado(usuarioObj);
+          setIsUserLoggedIn(true);
+          console.log("Usuário logado detectado:", usuarioObj.email);
+        } else {
+          setUsuarioLogado(null);
+          setIsUserLoggedIn(false);
+          console.log("Nenhum usuário logado");
+        }
       } catch (error) {
         console.error("Erro ao verificar login:", error);
+        setUsuarioLogado(null);
         setIsUserLoggedIn(false);
       }
     };
@@ -149,8 +162,6 @@ export default function HomeScreen({ navigation }) {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const dataThirtyDaysAgo = thirtyDaysAgo.toISOString().split("T")[0];
 
-        console.log("Data de 30 dias atrás:", dataThirtyDaysAgo);
-
         const command = new ScanCommand({
           TableName: "produtos",
           FilterExpression: "dataPublicacao >= :dataLimite",
@@ -161,8 +172,6 @@ export default function HomeScreen({ navigation }) {
         });
 
         const data = await dynamoDB.send(command);
-
-        console.log("Produtos encontrados:", data.Items?.length || 0);
 
         if (data.Items && data.Items.length > 0) {
           const produtosFormatados = data.Items.map((item) => {
@@ -185,10 +194,8 @@ export default function HomeScreen({ navigation }) {
             };
           });
 
-          console.log("Produtos formatados:", produtosFormatados.length);
           setLancamentos(produtosFormatados);
         } else {
-          console.log("Nenhum produto de lançamento encontrado");
           setLancamentos([]);
         }
 
@@ -214,25 +221,109 @@ export default function HomeScreen({ navigation }) {
   }, [banners]);
 
   // --- Adicionar ao carrinho com verificação de autenticação ---
-  const handleAddToCart = () => {
-    if (!user) {
-      Alert.alert(
-        "Você não está logado",
-        "Para adicionar ao carrinho, faça login primeiro.",
-        [
-          { text: "Cancelar", style: "cancel" },
-          {
-            text: "Fazer login",
-            onPress: () => navigation.navigate("Login"),
-          },
-        ]
-      );
-      return;
-    }
+  // ... (mantém todo o código anterior até a função handleAddToCart)
 
-    // Se estiver logado → adiciona ao carrinho
-    addToCart(produto);
+  // --- Adicionar ao carrinho com verificação de autenticação ---
+  const handleAddToCart = async (product) => {
+    try {
+      console.log("=== INICIANDO ADIÇÃO AO CARRINHO ===");
+
+      // ----- 1. Buscar usuário logado de forma segura -----
+      const usuarioRaw = await AsyncStorage.getItem("usuarioLogado");
+
+      console.log(
+        "Usuário no AsyncStorage:",
+        usuarioRaw ? "Existe" : "NÃO existe"
+      );
+
+      if (!usuarioRaw) {
+        console.log("USUÁRIO NÃO LOGADO - Exibindo alerta");
+        Alert.alert(
+          "Você não está logado",
+          "Para adicionar ao carrinho, faça login primeiro.",
+          [
+            { text: "Cancelar", style: "cancel" },
+            {
+              text: "Fazer login",
+              onPress: () => {
+                console.log("Navegando para tela de Login");
+                navigation.navigate("Login");
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // ----- 2. Parse do usuário -----
+      const usuarioObj = JSON.parse(usuarioRaw);
+      const usuarioId = String(usuarioObj.id);
+
+      console.log("USUÁRIO LOGADO - Processando carrinho");
+      console.log("ID do usuário:", usuarioId);
+      console.log("Produto a adicionar:", product.name);
+
+      // ----- 3. GERAR ID ÚNICO COM TIMESTAMP (SEMPRE NOVO) -----
+      const timestamp = Date.now();
+      const carrinhoItemId = `${usuarioId}_${product.id}_${timestamp}`;
+
+      console.log("🆔 ID único gerado:", carrinhoItemId);
+
+      // ----- 4. Salvar no DynamoDB PRIMEIRO (fonte da verdade) -----
+      try {
+        const precoFormatado = parseFloat(product.price || 0).toFixed(1);
+
+        const carrinhoItem = {
+          id: { S: String(carrinhoItemId) }, // ✅ ID único com timestamp
+          usuarioId: { S: String(usuarioId) },
+          produtoId: { S: String(product.id) },
+          nomeProduto: { S: String(product.name || "Produto sem nome") },
+          preco: { N: String(precoFormatado) },
+          imagem: { S: String(product.image || "") },
+          quantidade: { N: "1" },
+          dataAdicionado: { S: new Date().toISOString() },
+        };
+
+        const putCommand = new PutItemCommand({
+          TableName: "carrinho",
+          Item: carrinhoItem,
+        });
+
+        await dynamoDB.send(putCommand);
+        console.log("✅ Produto salvo no DynamoDB com sucesso");
+
+        // ----- 5. Sucesso -----
+        Alert.alert("Sucesso", "Produto adicionado ao carrinho!", [
+          {
+            text: "OK",
+            onPress: () => console.log("=== ADIÇÃO AO CARRINHO CONCLUÍDA ==="),
+          },
+        ]);
+      } catch (dbError) {
+        console.error("❌ Erro ao salvar no DynamoDB:", dbError);
+        Alert.alert(
+          "Erro",
+          "Não foi possível adicionar o produto ao carrinho. Tente novamente."
+        );
+      }
+    } catch (error) {
+      console.error("❌ Erro geral ao adicionar ao carrinho:", error);
+      Alert.alert("Erro", "Não foi possível adicionar o produto ao carrinho.");
+    }
   };
+
+  useEffect(() => {
+    const debug = async () => {
+      console.log("===== DEBUG ASYNCSTORAGE =====");
+      const keys = await AsyncStorage.getAllKeys();
+      console.log("Todas as chaves:", keys);
+
+      const usuario = await AsyncStorage.getItem("usuarioLogado");
+      console.log("usuarioLogado bruto:", usuario);
+    };
+
+    debug();
+  }, []);
 
   if (!fontsLoaded) {
     return null;

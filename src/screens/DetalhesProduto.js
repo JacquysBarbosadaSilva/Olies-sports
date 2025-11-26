@@ -12,10 +12,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   GetItemCommand,
   QueryCommand,
   ScanCommand,
+  PutItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import awsConfig, { dynamoDB, s3, BUCKET_NAME } from "../../awsConfig"; // ajuste path
 
@@ -240,14 +242,57 @@ const DetalhesProduto = () => {
     setSelectedSize(size);
   };
 
-  const handleAddToCart = () => {
-    if (product && selectedSize) {
-      Alert.alert(
-        "Adicionado",
-        `${product.nome} tamanho ${selectedSize} adicionado ao carrinho`
-      );
-    } else {
+  const handleAddToCart = async () => {
+    if (!selectedSize) {
       Alert.alert("Escolha um tamanho");
+      return;
+    }
+    try {
+      const usuarioStorage = await AsyncStorage.getItem("usuarioLogado");
+      if (!usuarioStorage) {
+        Alert.alert(
+          "Erro",
+          "Você precisa estar logado para adicionar ao carrinho."
+        );
+        return;
+      }
+      const usuarioObj = JSON.parse(usuarioStorage);
+      const userId = String(usuarioObj.id);
+      // Gerar ID único para o item no carrinho (baseado em userId, productId, selectedSize e timestamp para evitar colisões)
+      const cartItemId = `${userId}_${productId}_${selectedSize}_${Date.now()}`;
+      // Pegar a primeira cor disponível (se existir), garantindo que seja uma string
+      const cor =
+        product.cores && product.cores.length > 0
+          ? product.cores[0].nome || "Padrão"
+          : "Padrão";
+      // Pegar a primeira imagem disponível (se existir)
+      const imagem =
+        product.imagensFlat && product.imagensFlat.length > 0
+          ? product.imagensFlat[0]
+          : "";
+      const item = {
+        id: { S: cartItemId },
+        usuarioId: { S: userId },
+        produtoId: { S: String(productId) },
+        nomeProduto: { S: product.nome },
+        preco: { N: product.preco.toString() },
+        quantidade: { N: "1" },
+        cor: { S: cor },
+        imagem: { S: imagem },
+        tamanho: { S: selectedSize }, // Adicionado tamanho
+      };
+      // Log para depuração (remova em produção)
+      console.log("Item to put:", JSON.stringify(item, null, 2));
+      await dynamoDB.send(
+        new PutItemCommand({
+          TableName: "carrinho",
+          Item: item,
+        })
+      );
+      Alert.alert("Sucesso", "Produto adicionado ao carrinho!");
+    } catch (error) {
+      console.error("Erro ao adicionar ao carrinho:", error);
+      Alert.alert("Erro", "Não foi possível adicionar ao carrinho.");
     }
   };
 

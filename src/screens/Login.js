@@ -50,7 +50,7 @@ const Login = () => {
 
       // 🔍 1. Procurar usuário pelo email no DynamoDB
       const command = new ScanCommand({
-        TableName: "usuarios", // <-- ALTERAR DEPOIS PARA O NOME CERTO
+        TableName: "users-olies-sports", // <-- ALTERAR DEPOIS PARA O NOME CERTO
         FilterExpression: "#em = :email",
         ExpressionAttributeNames: { "#em": "email" },
         ExpressionAttributeValues: {
@@ -70,7 +70,7 @@ const Login = () => {
       const usuario = unmarshall(result.Items[0]);
 
       // ⚠ 2. Comparar senha digitada com o hash
-      const senhaConfere = bcrypt.compareSync(password, usuario.senha);
+      const senhaConfere = bcrypt.compareSync(password, usuario.senhaHash);
 
       if (!senhaConfere) {
         Alert.alert("Erro", "Senha incorreta!");

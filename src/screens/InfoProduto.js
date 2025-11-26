@@ -69,6 +69,22 @@ export default function InfoProduto() {
     produtoParam?.tamanhos?.indisponiveis || []
   );
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const carregarUsuario = async () => {
+      try {
+        const tipo = await AsyncStorage.getItem("tipoUsuario");
+        if (tipo === "admin") {
+          setIsAdmin(true);
+        }
+      } catch (e) {
+        console.log("Erro ao ler tipoUsuario:", e);
+      }
+    };
+    carregarUsuario();
+  }, []);
+
   // clients / constantes (do seu awsConfig)
   const dynamoDB = AWS.dynamoDB;
   const s3 = AWS.s3;
@@ -563,6 +579,7 @@ export default function InfoProduto() {
   // -------------------------
   return (
     <View style={styles.container}>
+      {isAdmin && (
       <View
         style={{
           flexDirection: "row",
@@ -590,6 +607,8 @@ export default function InfoProduto() {
           <Ionicons name="create-outline" size={26} color="#333" />
         </TouchableOpacity>
       </View>
+      )}
+
 
       <FlatList
         data={displayImages}
@@ -674,9 +693,6 @@ export default function InfoProduto() {
           <Text style={styles.textoBotaoDetalhes}>Detalhes do Produto</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoCarrinho}>
-          <Text style={styles.textoBotaoCarrinho}>Adicionar ao Carrinho</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Modal de Edição */}
@@ -895,6 +911,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 8,
+    marginBottom: 50
   },
   botaoCarrinho: {
     backgroundColor: "#fff",

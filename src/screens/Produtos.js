@@ -13,6 +13,7 @@ import {
   FlatList,
   Dimensions,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
@@ -21,7 +22,6 @@ import {
   ScanCommand,
 } from "@aws-sdk/client-dynamodb";
 import { useNavigation } from "@react-navigation/native";
-// import awsConfig, { dynamoDB, s3, BUCKET_NAME, REGION } from "../../awsConfig";
 import { v4 as uuid } from "uuid";
 import * as AWS from "../../awsConfig";
 
@@ -60,9 +60,6 @@ export default function Produtos() {
     }
   };
 
-  useEffect(() => {
-    fetchProdutos();
-  }, []);
   const navigation = useNavigation();
 
   const abrirProduto = (item) => {
@@ -76,24 +73,107 @@ export default function Produtos() {
   const [descricao, setDescricao] = useState("");
   const [corInput, setCorInput] = useState("");
   const [hexInput, setHexInput] = useState("");
-  // público-alvo (pode ter vários)
   const [publicoInput, setPublicoInput] = useState("");
   const [publicoAlvo, setPublicoAlvo] = useState([]);
-
-  // tipo: calcado | roupa
   const [tipo, setTipo] = useState("calcado");
-
-  // tamanhos
   const [inicioCalc, setInicioCalc] = useState("");
   const [fimCalc, setFimCalc] = useState("");
   const [indisponiveisCalc, setIndisponiveisCalc] = useState([]);
   const [indisponiveisRoupa, setIndisponiveisRoupa] = useState([]);
-
-  // cores: cada cor { id, cor, hex, imagens: [ { uri, fileName } ] }
   const [cores, setCores] = useState([]);
-
-  // lista de produtos salvos (aparece na tela principal)
   const [produtos, setProdutos] = useState([]);
+  const [userTipo, setUserTipo] = useState(null);
+
+  // Debug: monitora mudanças no userTipo
+  useEffect(() => {
+    console.log("Estado userTipo atualizado para:", userTipo);
+  }, [userTipo]);
+
+  // função robusta para carregar/tentar detectar o tipo do usuário
+  const carregarUsuario = async () => {
+    try {
+      const usuarioJson = await AsyncStorage.getItem("usuarioLogado");
+      if (!usuarioJson) {
+        console.log("AsyncStorage: usuarioLogado não encontrado");
+        setUserTipo(null);
+        return;
+      }
+
+      let usuario;
+      try {
+        usuario = JSON.parse(usuarioJson);
+      } catch (err) {
+        // se não for JSON - pode ser string simples
+        usuario = usuarioJson;
+      }
+
+      // tenta várias possibilidades de campos onde o tipo/role pode estar
+      const candidates = [
+        usuario?.tipo,
+        usuario?.role,
+        usuario?.tipoUsuario,
+        usuario?.tipo_user,
+        usuario?.perfil?.tipo,
+        usuario?.perfil?.role,
+        usuario?.perfil,
+      ];
+
+      // pega primeiro valor "truthy"
+      let tipoEncontrado = candidates.find(
+        (c) => c !== undefined && c !== null && c !== ""
+      );
+
+      // se ainda for objeto, tenta extrair .tipo / .role
+      if (typeof tipoEncontrado === "object") {
+        tipoEncontrado = tipoEncontrado.tipo || tipoEncontrado.role || null;
+      }
+
+      if (typeof tipoEncontrado === "string") {
+        const t = tipoEncontrado.trim().toLowerCase();
+        // normaliza variações comuns para 'admin'
+        if (["admin", "administrador", "adm", "administrator"].includes(t)) {
+          setUserTipo("admin");
+        } else if (
+          [
+            "cliente",
+            "user",
+            "usuario",
+            "usercliente",
+            "user_cliente",
+          ].includes(t)
+        ) {
+          setUserTipo("cliente");
+        } else {
+          // se não tiver certeza, grava o valor em lowercase (útil para depuração)
+          setUserTipo(t);
+        }
+        console.log("carregarUsuario -> tipoEncontrado:", tipoEncontrado);
+      } else {
+        // se não encontrou nada legível, seta null
+        console.log(
+          "carregarUsuario -> tipo não encontrado no objeto:",
+          usuario
+        );
+        setUserTipo(null);
+      }
+    } catch (err) {
+      console.log("Erro ao carregar usuário:", err);
+      setUserTipo(null);
+    }
+  };
+
+  useEffect(() => {
+    // load on mount
+    carregarUsuario();
+    fetchProdutos();
+
+    // reload when screen focuses (important after login/logout)
+    const unsubscribe = navigation.addListener("focus", () => {
+      carregarUsuario();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   // ajuda: gera array de números inclusive
   const gerarIntervalo = (inicio, fim) => {
@@ -117,28 +197,25 @@ export default function Produtos() {
     setPublicoAlvo((prev) => prev.filter((p) => p !== item));
   };
 
-  // Toggle indisponível (calcado)
   const toggleIndisponivelCalc = (size) => {
     setIndisponiveisCalc((prev) =>
       prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
     );
   };
 
-  // Toggle indisponível (roupa)
   const toggleIndisponivelRoupa = (size) => {
     setIndisponiveisRoupa((prev) =>
       prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
     );
   };
 
-  // Adicionar nova cor vazia
   const handleAddColor = () => {
     if (!hexInput.trim()) {
       Alert.alert(
         "HEX obrigatório",
         "Preencha o campo HEX antes de adicionar uma cor."
       );
-      return; // impede continuar
+      return;
     }
     if (!corInput.trim()) return Alert.alert("Insira o nome da cor");
     const id = Date.now().toString() + Math.random().toString(36).slice(2, 6);
@@ -153,12 +230,10 @@ export default function Produtos() {
     setHexInput("");
   };
 
-  // Remover cor
   const handleRemoveColor = (colorId) => {
     setCores((p) => p.filter((c) => c.id !== colorId));
   };
 
-  // Pick images FOR A GIVEN COLOR (uses ImagePicker allowsMultipleSelection)
   const pickImagesForColor = async (colorId) => {
     try {
       const res = await ImagePicker.launchImageLibraryAsync({
@@ -238,7 +313,6 @@ export default function Produtos() {
     if (!cores.length)
       return Alert.alert("Adicione pelo menos uma cor com imagens");
 
-    // montar tamanhos
     let tamanhosObj = {};
     if (tipo === "calcado") {
       const inicio = parseInt(inicioCalc, 10);
@@ -304,10 +378,8 @@ export default function Produtos() {
     try {
       await saveToDynamoDB(productData);
 
-      // adicionar à lista local de produtos (aparece na tela principal)
       setProdutos((prev) => [productData, ...prev]);
 
-      // reset form
       setModalVisible(false);
       setNome("");
       setPreco("");
@@ -328,7 +400,6 @@ export default function Produtos() {
     }
   };
 
-  // Componente interno: card de produto com carrossel automático
   const ProductCard = ({ produto }) => {
     const scrollRef = useRef(null);
     const indexRef = useRef(0);
@@ -342,13 +413,12 @@ export default function Produtos() {
     useEffect(() => {
       if (!imagens.length) return;
 
-      // auto-scroll
       if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = setInterval(() => {
         indexRef.current = (indexRef.current + 1) % imagens.length;
         if (scrollRef.current) {
           scrollRef.current.scrollTo({
-            x: indexRef.current * (SCREEN_WIDTH * 0.44), // largura da imagem no card
+            x: indexRef.current * (SCREEN_WIDTH * 0.44),
             animated: true,
           });
         }
@@ -408,10 +478,8 @@ export default function Produtos() {
     );
   };
 
-  // UI principal
   return (
     <View style={{ flex: 1, backgroundColor: "#f6f3ee" }}>
-      {/* Lista de produtos no topo */}
       <View style={{ padding: 12 }}>
         {produtos.length === 0 ? (
           <Text style={{ color: "#666", marginBottom: 8 }}>
@@ -419,7 +487,7 @@ export default function Produtos() {
           </Text>
         ) : (
           <FlatList
-            key={"2columns"} // 👈 IMPORTANTE: evita o erro do numColumns
+            key={"2columns"}
             data={produtos}
             numColumns={2}
             keyExtractor={(item) => item.id}
@@ -437,15 +505,15 @@ export default function Produtos() {
         )}
       </View>
 
-      {/* Botão + */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.addButtonText}>+</Text>
-      </TouchableOpacity>
+      {userTipo === "admin" && (
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
+      )}
 
-      {/* Modal simples (overlay) */}
       {modalVisible && (
         <View style={styles.modal}>
           <ScrollView>
@@ -487,7 +555,6 @@ export default function Produtos() {
               </TouchableOpacity>
             </View>
 
-            {/* lista */}
             <View style={{ marginTop: 8 }}>
               {publicoAlvo.map((p, i) => (
                 <View
@@ -552,7 +619,6 @@ export default function Produtos() {
               </TouchableOpacity>
             </View>
 
-            {/* tamanhos dinamicos */}
             {tipo === "calcado" && (
               <>
                 <Text style={styles.label}>Intervalo (ex: 38 - 44)</Text>
@@ -633,7 +699,6 @@ export default function Produtos() {
               </>
             )}
 
-            {/* Cores */}
             <Text style={[styles.label, { marginTop: 12 }]}>
               Adicionar cor (cada cor tem imagens)
             </Text>
@@ -658,7 +723,6 @@ export default function Produtos() {
               <Text style={styles.pickText}>Adicionar cor</Text>
             </TouchableOpacity>
 
-            {/* Cores list */}
             <View style={{ marginTop: 12 }}>
               {cores.map((color) => (
                 <View key={color.id} style={styles.colorRow}>
@@ -696,7 +760,6 @@ export default function Produtos() {
                     </TouchableOpacity>
                   </View>
 
-                  {/* thumbnails */}
                   <ScrollView horizontal style={{ marginTop: 8 }}>
                     {color.imagens.map((img, idx) => (
                       <Image
@@ -730,7 +793,6 @@ export default function Produtos() {
   );
 }
 
-/* --- estilos --- */
 const styles = StyleSheet.create({
   addButton: {
     backgroundColor: "#001f3f",
@@ -786,18 +848,15 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     color: "#001f3f",
   },
-
   tipoBtn: {
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 12,
     backgroundColor: "#e4ded4",
   },
-
   tipoBtnAtivo: {
     backgroundColor: "#001f3f",
   },
-
   tipoBtnpublico: {
     paddingVertical: 10,
     paddingHorizontal: 18,
@@ -809,7 +868,6 @@ const styles = StyleSheet.create({
     alignContent: "center",
     textAlign: "center",
   },
-
   tipoText: {
     color: "#001f3f",
     fontWeight: "600",
@@ -829,12 +887,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "white",
   },
-
   sizeBoxDisabled: {
     backgroundColor: "#d9d9d9",
     borderColor: "#888",
   },
-
   sizeBoxText: {
     fontSize: 16,
     color: "#001f3f",
@@ -850,7 +906,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
-
   colorRow: {
     marginBottom: 16,
     padding: 10,
@@ -859,7 +914,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
   },
-
   colorCircle: {
     width: 28,
     height: 28,
@@ -873,14 +927,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 8,
   },
-
   preview: {
     width: 75,
     height: 75,
     borderRadius: 10,
     marginRight: 8,
   },
-
   saveButton: {
     backgroundColor: "#001f3f",
     paddingVertical: 14,
@@ -888,13 +940,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: "center",
   },
-
   saveButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "700",
   },
-
   closeButton: {
     paddingVertical: 14,
     borderRadius: 14,
@@ -902,19 +952,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#e4ded4",
     alignItems: "center",
   },
-  sizeBox: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 8,
-    marginRight: 8,
-    marginBottom: 8,
-    borderRadius: 6,
-    backgroundColor: "#fff",
-  },
-  sizeBoxDisabled: { backgroundColor: "#f7f7f7", opacity: 0.6 },
-  sizeBoxText: { fontWeight: "600" },
-
-  /* --- estilos dos cards --- */
   card: {
     width: SCREEN_WIDTH * 0.46,
     backgroundColor: "#fff",
