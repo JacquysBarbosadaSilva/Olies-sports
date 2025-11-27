@@ -385,7 +385,8 @@ const CartScreen = ({ navigation }) => {
     try {
       const isLoggedIn = await AsyncStorage.getItem("userLoggedIn");
       if (isLoggedIn === "true") {
-        navigation.navigate("Pagamento", { cartItems });
+        navigation.navigate("Pagamento", { cartItems: itensCarrinho });
+
       } else {
         Alert.alert(
           "Atenção",
@@ -442,7 +443,7 @@ const CartScreen = ({ navigation }) => {
           </View>
           <TouchableOpacity
             style={styles.checkoutButton}
-            onPress={handleCheckout}
+            onPress={() => navigation.navigate("Pagamento", { cartItems })}
           >
             <Text style={styles.checkoutButtonText}>Finalizar compra</Text>
           </TouchableOpacity>
