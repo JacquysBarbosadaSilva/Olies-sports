@@ -76,10 +76,15 @@ export default function HomeScreen({ navigation }) {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const [usuarioLogado, setUsuarioLogado] = useState(null);
-
+  // Estados para o modal de seleção
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [productDetails, setProductDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const lancamentosScrollRef = useRef(null);
   const acessosScrollRef = useRef(null);
-
   const [fontsLoaded] = useFonts({
     "Kantumruy Pro SemiBold": require("../assets/fonts/KantumruyPro-SemiBold.ttf"),
     "Kantumruy Pro Medium": require("../assets/fonts/KantumruyPro-Medium.ttf"),
@@ -106,7 +111,6 @@ export default function HomeScreen({ navigation }) {
         setIsUserLoggedIn(false);
       }
     };
-
     checkUserLogin();
 
     // Verificar novamente quando a tela entra em foco
@@ -122,9 +126,7 @@ export default function HomeScreen({ navigation }) {
         const command = new ListObjectsV2Command({
           Bucket: "banner-olies-sports",
         });
-
         const data = await s3.send(command);
-
         if (data.Contents && data.Contents.length > 0) {
           const bannerUrls = await Promise.all(
             data.Contents.map(async (item) => {
@@ -137,7 +139,6 @@ export default function HomeScreen({ navigation }) {
               });
             })
           );
-
           setBanners(bannerUrls);
         } else {
           console.log("Nenhum banner encontrado no bucket");
@@ -148,7 +149,6 @@ export default function HomeScreen({ navigation }) {
         setLoadingBanners(false);
       }
     };
-
     fetchBannersFromS3();
   }, []);
 
@@ -157,11 +157,9 @@ export default function HomeScreen({ navigation }) {
     const fetchProductsFromDynamoDB = async () => {
       try {
         setLoadingProducts(true);
-
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const dataThirtyDaysAgo = thirtyDaysAgo.toISOString().split("T")[0];
-
         const command = new ScanCommand({
           TableName: "produtos",
           FilterExpression: "dataPublicacao >= :dataLimite",
@@ -170,15 +168,12 @@ export default function HomeScreen({ navigation }) {
           },
           Limit: 50,
         });
-
         const data = await dynamoDB.send(command);
-
         if (data.Items && data.Items.length > 0) {
           const produtosFormatados = data.Items.map((item) => {
             const preco = parseFloat(item.preco?.N || 0);
             const imagensFlat = item.imagens ? JSON.parse(item.imagens.S) : [];
             const primeiraImagem = imagensFlat.length > 0 ? imagensFlat[0] : "";
-
             return {
               id: item.id.S,
               name: item.nome?.S || "Sem nome",
@@ -193,21 +188,19 @@ export default function HomeScreen({ navigation }) {
               precoProdutoText: `R$ ${preco.toFixed(2)} à vista`,
             };
           });
-
           setLancamentos(produtosFormatados);
         } else {
           setLancamentos([]);
         }
-
         setLoadingProducts(false);
       } catch (error) {
         console.error("Erro ao buscar produtos:", error);
         setLoadingProducts(false);
       }
     };
-
     fetchProductsFromDynamoDB();
   }, []);
+  
 
   // --- Carrossel de Banners (auto-scroll) ---
   useEffect(() => {
@@ -220,10 +213,7 @@ export default function HomeScreen({ navigation }) {
     }
   }, [banners]);
 
-  // --- Adicionar ao carrinho com verificação de autenticação ---
-  // ... (mantém todo o código anterior até a função handleAddToCart)
 
-  // --- Adicionar ao carrinho com verificação de autenticação ---
   const handleAddToCart = async (product) => {
     try {
       console.log("=== INICIANDO ADIÇÃO AO CARRINHO ===");

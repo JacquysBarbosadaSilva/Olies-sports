@@ -62,7 +62,35 @@ export default function Produtos() {
 
   const navigation = useNavigation();
 
-  const abrirProduto = (item) => {
+  const registrarUltimoAcesso = async (produtoId) => {
+    try {
+      const usuarioId = await AsyncStorage.getItem("usuarioId");
+      if (!usuarioId) {
+        console.log("Usuário não logado, não salvará acesso.");
+        return;
+      }
+
+      const acessoId = Date.now().toString();
+
+      const params = {
+        TableName: "ultimos_acessos",
+        Item: {
+          id: { S: acessoId },
+          usuarioId: { S: usuarioId },
+          produtoId: { S: produtoId },
+          dataAcesso: { S: new Date().toISOString() },
+        },
+      };
+
+      await dynamoDB.send(new PutItemCommand(params));
+      console.log("Acesso registrado com sucesso!");
+    } catch (err) {
+      console.error("Erro ao registrar acesso:", err);
+    }
+  };
+
+  const abrirProduto = async (item) => {
+    await registrarUltimoAcesso(item.id);
     navigation.navigate("InfoProduto", { produto: item });
   };
 
