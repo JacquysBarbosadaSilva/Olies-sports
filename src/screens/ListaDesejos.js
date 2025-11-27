@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useEffect, useState } from "react"; // Adicione useEffect e useState
 import {
   View,
   Text,
@@ -9,13 +9,78 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { FavoritesContext } from "../context/FavoritesContext";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Adicione esta importação
+import { ScanCommand, DeleteItemCommand } from "@aws-sdk/client-dynamodb"; // Adicione estas importações
+import { dynamoDB } from "../../awsConfig"; // Ajuste o caminho se necessário (baseado no seu awsConfig)
 
-const logo =
-  "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png";
+const logo = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png";
 
 export default function ListaDesejosScreen({ navigation }) {
-  const { favorites, removeFavorite } = useContext(FavoritesContext);
+  const [favorites, setFavorites] = useState([]); // Estado local para favoritos
+
+  // Função para buscar favoritos do DynamoDB
+  const loadFavorites = async () => {
+    try {
+      const usuarioId = await AsyncStorage.getItem("usuarioLogado");
+      if (!usuarioId) {
+        Alert.alert("Erro", "Usuário não encontrado. Faça login novamente.");
+        return;
+      }
+
+      const scanParams = {
+        TableName: "favoritos",
+        FilterExpression: "usuarioId = :uid",
+        ExpressionAttributeValues: {
+          ":uid": { S: usuarioId },
+        },
+      };
+      const scanCommand = new ScanCommand(scanParams);
+      const result = await dynamoDB.send(scanCommand);
+
+      // Mapeie os dados do DynamoDB para o formato esperado pela UI
+      const mappedFavorites = result.Items.map((item) => ({
+        id: item.id.S, // Chave primária
+        produtoId: item.produtoId.S,
+        nome: item.nomeProduto.S,
+        preco: parseFloat(item.preco.N), // Converta para número
+        cor: item.cor.S,
+        tamanho: item.tamanho.S,
+        imagemSource: { uri: item.imagem.S }, // Use como source para Image
+        quantidade: parseInt(item.quantidade.N),
+        dataAdicionado: item.dataAdicionado.S,
+      }));
+
+      setFavorites(mappedFavorites);
+    } catch (error) {
+      console.log("Erro ao carregar favoritos:", error);
+      Alert.alert("Erro", "Não foi possível carregar os favoritos.");
+    }
+  };
+
+  // Carregue favoritos ao montar a tela
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  // Função para remover favorito do DynamoDB
+  const removeFavorite = async (itemId) => {
+    try {
+      const deleteParams = {
+        TableName: "favoritos",
+        Key: {
+          id: { S: itemId }, // Use o "id" como chave primária
+        },
+      };
+      await dynamoDB.send(new DeleteItemCommand(deleteParams));
+
+      // Atualize o estado local removendo o item
+      setFavorites((prev) => prev.filter((item) => item.id !== itemId));
+      Alert.alert("Sucesso", "Produto removido dos favoritos!");
+    } catch (error) {
+      console.log("Erro ao remover favorito:", error);
+      Alert.alert("Erro", "Não foi possível remover o favorito.");
+    }
+  };
 
   const removerItem = (itemId) => {
     Alert.alert(
@@ -44,7 +109,9 @@ export default function ListaDesejosScreen({ navigation }) {
 
       {favorites.length === 0 ? (
         <View style={styles.containerVazio}>
-          <Text style={styles.textoVazio}>Sua lista de desejos está vazia.</Text>
+          <Text style={styles.textoVazio}>
+            Sua lista de desejos está vazia.
+          </Text>
         </View>
       ) : (
         <>
@@ -55,7 +122,7 @@ export default function ListaDesejosScreen({ navigation }) {
               <Image source={item.imagemSource} style={styles.imagemProduto} />
               <View style={styles.detalhes}>
                 <View style={styles.topoDetalhes}>
-                  <Text style={styles.preco}>R$ {item.preco}</Text>
+                  <Text style={styles.preco}>R$ {item.preco.toFixed(2)}</Text>
                   <View style={styles.icones}>
                     <TouchableOpacity onPress={() => removerItem(item.id)}>
                       <Ionicons name="heart" size={20} color="#052242" />
@@ -64,12 +131,14 @@ export default function ListaDesejosScreen({ navigation }) {
                 </View>
                 <Text style={styles.nomeProduto}>{item.nome}</Text>
                 <Text style={styles.descricao}>
-                  Cor: {item.cor}
+                  Cor: {item.cor} | Tamanho: {item.tamanho}
                 </Text>
 
                 <TouchableOpacity
                   style={styles.botaoCarrinho}
-                  onPress={() => navigation.navigate("Carrinho", { newItem: item })}
+                  onPress={() =>
+                    navigation.navigate("Carrinho", { newItem: item })
+                  }
                 >
                   <Text style={styles.textoBotao}>Adicionar ao Carrinho</Text>
                 </TouchableOpacity>
@@ -82,6 +151,7 @@ export default function ListaDesejosScreen({ navigation }) {
   );
 }
 
+// Estilos permanecem os mesmos
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F3ECE2", paddingTop: 40 },
   headerContainer: {
@@ -135,7 +205,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 10,
   },
-  imagemProduto: { width: 90, height: 100, resizeMode: "contain", marginRight: 10 },
+  imagemProduto: {
+    width: 90,
+    height: 100,
+    resizeMode: "contain",
+    marginRight: 10,
+  },
   detalhes: { flex: 1, justifyContent: "space-between" },
   topoDetalhes: {
     flexDirection: "row",

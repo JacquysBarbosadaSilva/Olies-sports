@@ -213,10 +213,7 @@ export default function HomeScreen({ navigation }) {
     }
   }, [banners]);
 
-  // --- Adicionar ao carrinho com verificação de autenticação ---
-  // ... (mantém todo o código anterior até a função handleAddToCart)
 
-  // --- Adicionar ao carrinho com verificação de autenticação ---
   const handleAddToCart = async (product) => {
     try {
       console.log("=== INICIANDO ADIÇÃO AO CARRINHO ===");

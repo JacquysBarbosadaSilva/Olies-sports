@@ -62,6 +62,39 @@ const CartScreen = ({ navigation }) => {
     console.log("Chave extraída:", JSON.stringify(Key, null, 2));
     return Key;
   };
+  const generateId = () => {
+    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+  };
+  // Adicione esta função logo após generateId:
+  const addItemToDB = async (item) => {
+    try {
+      const usuarioStorage = await AsyncStorage.getItem("usuarioLogado");
+      if (!usuarioStorage) {
+        throw new Error("Usuário não logado");
+      }
+      const usuarioObj = JSON.parse(usuarioStorage);
+      const userId = String(usuarioObj.id);
+      await dynamoDB.send(
+        new PutItemCommand({
+          TableName: "carrinho",
+          Item: {
+            id: { S: item.id },
+            usuarioId: { S: userId },
+            produtoId: { S: item.produtoId },
+            nomeProduto: { S: item.name },
+            preco: { N: item.price.toString() },
+            quantidade: { N: item.quantity.toString() },
+            cor: { S: item.cor },
+            imagem: { S: item.image.uri },
+          },
+        })
+      );
+      console.log("Item adicionado ao DynamoDB com sucesso");
+    } catch (error) {
+      console.error("Erro ao adicionar item ao DB:", error);
+      throw error;
+    }
+  };
 
   // ============================================
   // Atualiza quantidade no DynamoDB
@@ -194,25 +227,51 @@ const CartScreen = ({ navigation }) => {
   useEffect(() => {
     if (route.params?.newItem) {
       const newItem = route.params.newItem;
-
-      setCartItems((prevItems) => {
-        const existingItem = prevItems.find((item) => item.id === newItem.id);
-
-        if (existingItem) {
-          return prevItems.map((item) =>
-            item.id === newItem.id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
+      const processNewItem = async () => {
+        try {
+          const existingItem = cartItems.find(
+            (item) =>
+              item.produtoId === newItem.produtoId && item.cor === newItem.cor
           );
-        } else {
-          return [...prevItems, { ...newItem, quantity: 1 }];
+          if (existingItem) {
+            // Incrementar quantidade no DB e no estado
+            const newQty = existingItem.quantity + 1;
+            await updateQuantityInDB(existingItem, newQty);
+            setCartItems((prev) =>
+              prev.map((i) =>
+                i.id === existingItem.id ? { ...i, quantity: newQty } : i
+              )
+            );
+          } else {
+            // Adicionar novo item
+            const newId = generateId();
+            const cartItem = {
+              id: newId,
+              produtoId: newItem.produtoId,
+              name: newItem.nome,
+              price: newItem.preco,
+              quantity: 1,
+              cor: newItem.cor,
+              image: newItem.imagemSource,
+            };
+            await addItemToDB(cartItem);
+            setCartItems((prev) => [...prev, cartItem]);
+          }
+          navigation.setParams({ newItem: undefined });
+          // Recarregar para garantir consistência
+          await loadCartFromDatabase();
+        } catch (error) {
+          console.error("Erro ao processar novo item:", error);
+          Alert.alert("Erro", "Não foi possível adicionar o item ao carrinho.");
         }
-      });
-
-      navigation.setParams({ newItem: undefined });
+      };
+      processNewItem();
     }
+  }, [route.params?.newItem, cartItems]);
+
+  useEffect(() => {
     loadCartFromDatabase();
-  }, [route.params?.newItem]);
+  }, []);
 
   const calculateTotal = () =>
     cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -386,7 +445,6 @@ const CartScreen = ({ navigation }) => {
       const isLoggedIn = await AsyncStorage.getItem("userLoggedIn");
       if (isLoggedIn === "true") {
         navigation.navigate("Pagamento", { cartItems: itensCarrinho });
-
       } else {
         Alert.alert(
           "Atenção",

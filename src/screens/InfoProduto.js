@@ -20,11 +20,16 @@ import {
   UpdateItemCommand,
   GetItemCommand,
   DeleteItemCommand,
+  QueryCommand,
+  PutItemCommand,
+  ScanCommand,
 } from "@aws-sdk/client-dynamodb";
 import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import * as ImagePicker from "expo-image-picker";
 import * as AWS from "../../awsConfig";
 import { Picker } from "@react-native-picker/picker";
+import { useLayoutEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { height } = Dimensions.get("window");
 const CAROUSEL_HEIGHT_RATIO = 0.5;
@@ -48,6 +53,7 @@ export default function InfoProduto() {
   const [imagemAtual, setImagemAtual] = useState(0);
   const [selectedColorPicker, setSelectedColorPicker] = useState(null); // id da cor selecionada pra editar imagens
   const [modalVisible, setModalVisible] = useState(false);
+  const [isFavorito, setIsFavorito] = useState(false);
 
   // fields editáveis
   const [editNome, setEditNome] = useState(produtoParam?.nome || "");
@@ -69,12 +75,27 @@ export default function InfoProduto() {
     produtoParam?.tamanhos?.indisponiveis || []
   );
 
+  const [selectedTamanho, setSelectedTamanho] = useState("");
+
   const [isAdmin, setIsAdmin] = useState(false);
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Ionicons
+          name="heart-outline"
+          size={24}
+          color="#052242"
+          style={{ marginRight: 15 }}
+          onPress={handleFavoritar}
+        />
+      ),
+    });
+  }, [navigation, selectedColors, selectedTamanho, produto]);
 
   useEffect(() => {
     const carregarUsuario = async () => {
       try {
-        const tipo = await AsyncStorage.getItem("tipoUsuario");
+        const tipo = await AsyncStorage.getItem("usuarioLogado");
         if (tipo === "admin") {
           setIsAdmin(true);
         }
@@ -84,6 +105,29 @@ export default function InfoProduto() {
     };
     carregarUsuario();
   }, []);
+
+  useEffect(() => {
+    const checkFavorito = async () => {
+      try {
+        const usuarioId = await AsyncStorage.getItem("usuarioLogado");
+        if (!usuarioId || !produto?.id) return;
+        const queryParams = {
+          TableName: "favoritos",
+          KeyConditionExpression: "usuarioId = :uid AND produtoId = :pid",
+          ExpressionAttributeValues: {
+            ":uid": { S: usuarioId },
+            ":pid": { S: String(produto.id) },
+          },
+        };
+        const queryCommand = new QueryCommand(queryParams);
+        const result = await dynamoDB.send(queryCommand);
+        setIsFavorito(result.Items && result.Items.length > 0);
+      } catch (error) {
+        console.log("Erro ao verificar favorito:", error);
+      }
+    };
+    checkFavorito();
+  }, [produto?.id]);
 
   // clients / constantes (do seu awsConfig)
   const dynamoDB = AWS.dynamoDB;
@@ -485,6 +529,7 @@ export default function InfoProduto() {
     );
     if (!color) return null;
     const imagens = color.imagens || [];
+
     return (
       <View>
         <Text style={{ fontWeight: "600", marginBottom: 8 }}>
@@ -577,38 +622,117 @@ export default function InfoProduto() {
   // -------------------------
   // Render
   // -------------------------
+
+  const handleFavoritar = async () => {
+    try {
+      const usuarioId = await AsyncStorage.getItem("usuarioLogado");
+      if (!usuarioId) {
+        Alert.alert("Erro", "Usuário não encontrado (userId).");
+        return;
+      }
+      // Use Scan para verificar se já está favoritado (em vez de Query)
+      const scanParams = {
+        TableName: "favoritos",
+        FilterExpression: "usuarioId = :uid AND produtoId = :pid",
+        ExpressionAttributeValues: {
+          ":uid": { S: usuarioId },
+          ":pid": { S: String(produto.id) },
+        },
+      };
+      const scanCommand = new ScanCommand(scanParams);
+      const scanResult = await dynamoDB.send(scanCommand);
+      const existingFavorite =
+        scanResult.Items && scanResult.Items.length > 0
+          ? scanResult.Items[0]
+          : null;
+      if (existingFavorite) {
+        // Já está favoritado: remove usando o "id" do item encontrado
+        const deleteParams = {
+          TableName: "favoritos",
+          Key: {
+            id: { S: existingFavorite.id.S }, // Use o "id" como chave primária
+          },
+        };
+        await dynamoDB.send(new DeleteItemCommand(deleteParams));
+        setIsFavorito(false);
+        Alert.alert("Sucesso", "Produto removido dos favoritos!");
+      } else {
+        // Não está favoritado: adiciona
+        const favoritoId = Date.now().toString();
+        const dataAdicionado = new Date().toISOString();
+        // Pega a primeira imagem da cor selecionada
+        const corSelecionada = selectedColors[0];
+        const imagemPrincipal = corSelecionada?.imagens?.[0] || "";
+        const itemFavorito = {
+          id: { S: favoritoId }, // Chave primária
+          usuarioId: { S: usuarioId },
+          produtoId: { S: String(produto.id) },
+          cor: { S: corSelecionada?.cor || "" },
+          dataAdicionado: { S: dataAdicionado },
+          imagem: { S: imagemPrincipal },
+          nomeProduto: { S: produto.nome },
+          preco: { N: String(produto.preco) },
+          quantidade: { N: "1" },
+          tamanho: { S: selectedTamanho || "" },
+        };
+        const params = {
+          TableName: "favoritos",
+          Item: itemFavorito,
+        };
+        await dynamoDB.send(new PutItemCommand(params));
+        setIsFavorito(true);
+        Alert.alert("Sucesso", "Produto adicionado aos favoritos!");
+      }
+    } catch (error) {
+      console.log("Erro ao favoritar:", error);
+      Alert.alert("Erro", "Não foi possível atualizar os favoritos.");
+    }
+  };
+  // No useLayoutEffect, atualize para usar o estado isFavorito no ícone
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Ionicons
+          name={isFavorito ? "heart" : "heart-outline"} // Muda o ícone baseado no estado
+          size={24}
+          color="#052242"
+          style={{ marginRight: 15 }}
+          onPress={handleFavoritar}
+        />
+      ),
+    });
+  }, [navigation, selectedColors, selectedTamanho, produto, isFavorito]);
   return (
     <View style={styles.container}>
       {isAdmin && (
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "flex-end",
-          gap: 12,
-          marginTop: 10,
-          marginRight: 15,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            Alert.alert("Confirmar", "Deletar este produto?", [
-              { text: "Cancelar", style: "cancel" },
-              {
-                text: "Deletar",
-                style: "destructive",
-                onPress: deleteProdutoFromDB,
-              },
-            ]);
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "flex-end",
+            gap: 12,
+            marginTop: 10,
+            marginRight: 15,
           }}
         >
-          <Ionicons name="trash-outline" size={26} color="#dc3545" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setModalVisible(true)}>
-          <Ionicons name="create-outline" size={26} color="#333" />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert("Confirmar", "Deletar este produto?", [
+                { text: "Cancelar", style: "cancel" },
+                {
+                  text: "Deletar",
+                  style: "destructive",
+                  onPress: deleteProdutoFromDB,
+                },
+              ]);
+            }}
+          >
+            <Ionicons name="trash-outline" size={26} color="#dc3545" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
+            <Ionicons name="create-outline" size={26} color="#333" />
+          </TouchableOpacity>
+        </View>
       )}
-
 
       <FlatList
         data={displayImages}
@@ -692,7 +816,6 @@ export default function InfoProduto() {
         <TouchableOpacity style={styles.botaoDetalhes} onPress={goDetalhes}>
           <Text style={styles.textoBotaoDetalhes}>Detalhes do Produto</Text>
         </TouchableOpacity>
-
       </View>
 
       {/* Modal de Edição */}
@@ -911,7 +1034,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 8,
-    marginBottom: 50
+    marginBottom: 50,
   },
   botaoCarrinho: {
     backgroundColor: "#fff",
