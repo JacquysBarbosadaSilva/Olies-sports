@@ -19,13 +19,72 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import bcrypt from "react-native-bcrypt";
 import { v4 as uuid } from "uuid";
 
+const logo =
+  "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png";
+
 export default function PerfilScreen({ navigation }) {
+
+  const salvarAlteracoes = async () => {
+  try {
+    // Validação
+    if (novaSenhaPerfil || confirmarSenhaPerfil) {
+      if (novaSenhaPerfil.length < 6) {
+        return Alert.alert("Erro", "A senha deve ter pelo menos 6 caracteres.");
+      }
+
+      if (novaSenhaPerfil !== confirmarSenhaPerfil) {
+        return Alert.alert("Erro", "As senhas não coincidem.");
+      }
+
+      // Gerar hash da nova senha
+      const novaSenhaHash = bcrypt.hashSync(novaSenhaPerfil, 10);
+
+      // Atualizar no DynamoDB
+      await dynamoDB.send(
+        new PutCommand({
+          TableName: "users-olies-sports",
+          Item: {
+            ...usuario, // mantém os dados antigos
+            telefone,
+            email,
+            senhaHash: novaSenhaHash,
+            atualizadoEm: new Date().toISOString(),
+          },
+        })
+      );
+    } else {
+      // Só atualiza telefone/email se senha não for preenchida
+      await dynamoDB.send(
+        new PutCommand({
+          TableName: "users-olies-sports",
+          Item: {
+            ...usuario,
+            telefone,
+            email,
+            atualizadoEm: new Date().toISOString(),
+          },
+        })
+      );
+    }
+
+    Alert.alert("Sucesso", "Dados atualizados com sucesso!");
+
+    // Limpar campos de senha
+    setNovaSenhaPerfil("");
+    setConfirmarSenhaPerfil("");
+  } catch (error) {
+    console.log("Erro ao salvar alterações:", error);
+    Alert.alert("Erro", "Não foi possível salvar as alterações.");
+  }
+};
+
   const [usuario, setUsuario] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [telefone, setTelefone] = useState("");
-  const [endereco, setEndereco] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [uf, setUf] = useState("");
+  const [email, setEmail] = useState("");
+const [novaSenhaPerfil, setNovaSenhaPerfil] = useState("");
+const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
+
 
   // Estados para cadastro de novo usuário
   const [mostrarCadastro, setMostrarCadastro] = useState(false);
@@ -68,15 +127,7 @@ export default function PerfilScreen({ navigation }) {
       if (result.Item) {
         setUsuario(result.Item);
         setTelefone(result.Item.telefone || "");
-        setEndereco(result.Item.endereco || "");
-        setCidade(result.Item.cidade || "");
-        setUf(result.Item.uf || "");
-
-        Alert.alert(
-          "Bem-vindo(a)!",
-          `Olá, ${result.Item.nome}! Aqui você pode editar suas informações.`,
-          [{ text: "Ok", style: "default" }]
-        );
+        setEmail(result.Item.email || "");
       } else {
         console.log("Usuário NÃO encontrado no DynamoDB");
         setUsuario(null);
@@ -200,18 +251,15 @@ export default function PerfilScreen({ navigation }) {
 
   // ✔ Usuário encontrado → mostrar perfil
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <Ionicons
-            name="arrow-back"
-            size={28}
-            color="#001f3f"
-            onPress={() => navigation.goBack()}
-          />
-          <Text style={styles.title}>Meu Perfil</Text>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.headerContainer}>
+                <Text style={styles.titulo}>Meu Perfil</Text>
+                <Image source={{ uri: logo }} style={styles.logo} />
           <Ionicons name="person-circle-outline" size={34} color="#001f3f" />
-        </View>
+              </View>
+        
+              <View style={styles.shadowLine}></View>
+
 
         <View style={styles.profileInfo}>
           <Text style={styles.greeting}>Olá, {usuario.nome}!</Text>
@@ -226,27 +274,32 @@ export default function PerfilScreen({ navigation }) {
             onChangeText={setTelefone}
           />
           <TextInput
-            style={styles.input}
-            placeholder="Endereço"
-            value={endereco}
-            onChangeText={setEndereco}
+            style={styles.inputEmail}
+            placeholder="Email"
+            value={email}
+            editable={false}
           />
           <TextInput
-            style={styles.input}
-            placeholder="Cidade"
-            value={cidade}
-            onChangeText={setCidade}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="UF"
-            value={uf}
-            onChangeText={setUf}
-          />
+  style={styles.input}
+  placeholder="Nova senha"
+  secureTextEntry
+  value={novaSenhaPerfil}
+  onChangeText={setNovaSenhaPerfil}
+/>
 
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Salvar Alterações</Text>
-          </TouchableOpacity>
+<TextInput
+  style={styles.input}
+  placeholder="Confirmar nova senha"
+  secureTextEntry
+  value={confirmarSenhaPerfil}
+  onChangeText={setConfirmarSenhaPerfil}
+/>
+
+
+          <TouchableOpacity style={styles.button} onPress={salvarAlteracoes}>
+  <Text style={styles.buttonText}>Salvar Alterações</Text>
+</TouchableOpacity>
+
         </View>
 
         {/* 👮 FORMULÁRIO DE CADASTRO - APENAS PARA ADMIN */}
@@ -365,8 +418,34 @@ export default function PerfilScreen({ navigation }) {
           </View>
         )}
 
+        <View style={styles.menuContainer}>
+
+  <TouchableOpacity
+    style={styles.menuItemUp}
+    onPress={() => navigation.navigate("Enderecos")}
+  >
+    <View style={styles.menuLeft}>
+      <Ionicons name="cube-outline" size={22} color="#0B2A52" />
+      <Text style={styles.menuText}>Endereços</Text>
+    </View>
+    <Ionicons name="chevron-forward-outline" size={20} color="#999" />
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={styles.menuItem}
+    onPress={() => navigation.navigate("VizuPedidos")}
+  >
+    <View style={styles.menuLeft}>
+      <Ionicons name="receipt-outline" size={22} color="#0B2A52" />
+      <Text style={styles.menuText}>Pedidos</Text>
+    </View>
+    <Ionicons name="chevron-forward-outline" size={20} color="#999" />
+  </TouchableOpacity>
+
+</View>
+
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#B00020", marginTop: 20 }]}
+          style={[styles.button, { margin: 'auto',width: 200, backgroundColor: "#B00020", marginTop: 20 }]}
           onPress={() => {
             Alert.alert("Sair da conta?", "Tem certeza que deseja sair?", [
               {
@@ -392,67 +471,95 @@ export default function PerfilScreen({ navigation }) {
             ]);
           }}
         >
-          <Text style={styles.buttonText}>Sair</Text>
+          <Text style={styles.buttonTextSair}>Sair</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F3ECE2",
-  },
+container: { flex: 1, backgroundColor: "#F3ECE2", paddingTop: 40 },
   scroll: {
     padding: 20,
   },
-  header: {
+  headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 25,
+    height: 92,
+    paddingHorizontal: 20,
   },
-  title: {
-    fontSize: 22,
+  titulo: {
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#001f3f",
+    color: "#052242",
+    marginBottom: 12,
+  },
+  logo: { width: 77, height: 40, marginLeft: 10 },
+  shadowLine: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+    borderBottomWidth: 0.8,
+    marginBottom: 20,
+    borderBottomColor: "#00000025",
   },
   profileInfo: {
-    backgroundColor: "#fff",
+    width: "90%",
+    alignSelf: "center",
+    backgroundColor: "#F3ECE2",
     borderRadius: 12,
     padding: 20,
     elevation: 2,
   },
   greeting: {
+    color: "#052242",
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 5,
   },
   tipoUsuario: {
     fontSize: 14,
-    color: "#666",
+    color: "#052242",
     marginBottom: 15,
   },
   tipoBold: {
     fontWeight: "700",
-    color: "#001f3f",
+    color: "#052242",
     textTransform: "uppercase",
   },
   input: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#05224210",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+    fontSize: 15,
+  },
+    inputEmail: {
+      color: "#6666664b",
+    backgroundColor: "#05224210",
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
     fontSize: 15,
   },
   button: {
-    backgroundColor: "#001f3f",
+    alignSelf: "center",
+    width: "80%",
+    backgroundColor: "#052242",
     padding: 14,
     borderRadius: 8,
     marginTop: 10,
   },
   buttonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+  buttonTextSair: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
@@ -577,4 +684,42 @@ const styles = StyleSheet.create({
   tipoButtonTextActive: {
     color: "#fff",
   },
+  menuContainer: {
+    width: "90%",
+    alignSelf: "center",
+  backgroundColor: "#F3ECE2",
+  borderRadius: 12,
+  marginTop: 15,
+  paddingVertical: 5,
+  elevation: 2, // sombra Android
+},
+
+menuItemUp: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  paddingVertical: 15,
+  paddingHorizontal: 15,
+  borderBottomWidth: 1,
+  borderBottomColor: "#6666662f",
+},
+menuItem: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  paddingVertical: 15,
+  paddingHorizontal: 15,
+},
+
+menuLeft: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 10,
+},
+
+menuText: {
+  fontSize: 16,
+  color: "#333",
+  fontWeight: "500",
+},
 });
