@@ -27,42 +27,44 @@ const dynamoDB = AWS.dynamoDB;
 const s3 = AWS.s3;
 
 // --- Componente Card de Produto ---
-const ProductCard = ({ product, onAddToCart }) => (
-  <View style={styles.cards}>
-    <View style={[styles.desconto]}>
-      <View style={[styles.promoValor]}>
-        <Text style={[styles.fontKantumruySemiBold, styles.promocao]}>
-          {product.discount || "-0% OFF"}
+const ProductCard = ({ product, onAddToCart, onProductPress }) => (
+  <TouchableOpacity onPress={() => onProductPress && onProductPress(product)}>
+    <View style={styles.cards}>
+      <View style={[styles.desconto]}>
+        <View style={[styles.promoValor]}>
+          <Text style={[styles.fontKantumruySemiBold, styles.promocao]}>
+            {product.discount || "-0% OFF"}
+          </Text>
+        </View>
+      </View>
+      <Image
+        source={{ uri: product.image }}
+        style={styles.image}
+        resizeMode="contain"
+        onError={() => console.log("Erro ao carregar imagem:", product.image)}
+      />
+      <View>
+        <Text style={[styles.fontKantumruySemiBold, styles.nomeProduto]}>
+          {product.name}
+        </Text>
+      </View>
+      <View>
+        <Pressable style={styles.botao} onPress={() => onAddToCart(product)}>
+          <Text style={[styles.textBotao, styles.fontKantumruySemiBold]}>
+            Adicionar ao carrinho
+          </Text>
+        </Pressable>
+      </View>
+      <View>
+        <Text style={[styles.fontKantumruySemiBold, styles.precoProduto]}>
+          {product.precoProdutoText}
+        </Text>
+        <Text style={[styles.fontKantumruySemiBold, styles.parcelaProduto]}>
+          {product.installments}
         </Text>
       </View>
     </View>
-    <Image
-      source={{ uri: product.image }}
-      style={styles.image}
-      resizeMode="contain"
-      onError={() => console.log("Erro ao carregar imagem:", product.image)}
-    />
-    <View>
-      <Text style={[styles.fontKantumruySemiBold, styles.nomeProduto]}>
-        {product.name}
-      </Text>
-    </View>
-    <View>
-      <Pressable style={styles.botao} onPress={() => onAddToCart(product)}>
-        <Text style={[styles.textBotao, styles.fontKantumruySemiBold]}>
-          Adicionar ao carrinho
-        </Text>
-      </Pressable>
-    </View>
-    <View>
-      <Text style={[styles.fontKantumruySemiBold, styles.precoProduto]}>
-        {product.precoProdutoText}
-      </Text>
-      <Text style={[styles.fontKantumruySemiBold, styles.parcelaProduto]}>
-        {product.installments}
-      </Text>
-    </View>
-  </View>
+  </TouchableOpacity>
 );
 
 // --- Componente Principal: HomeScreen ---
@@ -74,17 +76,12 @@ export default function HomeScreen({ navigation }) {
   const [lastAccessedProducts, setLastAccessedProducts] = useState([]);
   const [loadingBanners, setLoadingBanners] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingLastAccessed, setLoadingLastAccessed] = useState(true);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const [usuarioLogado, setUsuarioLogado] = useState(null);
-  // Estados para o modal de seleção
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
-  const [productDetails, setProductDetails] = useState(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
   const lancamentosScrollRef = useRef(null);
   const acessosScrollRef = useRef(null);
+
   const [fontsLoaded] = useFonts({
     "Kantumruy Pro SemiBold": require("../assets/fonts/KantumruyPro-SemiBold.ttf"),
     "Kantumruy Pro Medium": require("../assets/fonts/KantumruyPro-Medium.ttf"),
@@ -113,7 +110,6 @@ export default function HomeScreen({ navigation }) {
     };
     checkUserLogin();
 
-    // Verificar novamente quando a tela entra em foco
     const unsubscribe = navigation.addListener("focus", checkUserLogin);
     return unsubscribe;
   }, [navigation]);
@@ -200,7 +196,130 @@ export default function HomeScreen({ navigation }) {
     };
     fetchProductsFromDynamoDB();
   }, []);
-  
+
+  // --- NOVA FUNCIONALIDADE: Buscar Últimos Produtos Acessados ---
+  useEffect(() => {
+    const fetchLastAccessedProducts = async () => {
+      try {
+        setLoadingLastAccessed(true);
+
+        // Buscar do AsyncStorage
+        const lastAccessedJSON = await AsyncStorage.getItem(
+          "lastAccessedProducts"
+        );
+
+        if (lastAccessedJSON) {
+          const lastAccessedIds = JSON.parse(lastAccessedJSON);
+          console.log("IDs dos últimos produtos acessados:", lastAccessedIds);
+
+          // Buscar detalhes completos do DynamoDB
+          const produtosDetalhados = await Promise.all(
+            lastAccessedIds.map(async (produtoId) => {
+              try {
+                const command = new ScanCommand({
+                  TableName: "produtos",
+                  FilterExpression: "id = :produtoId",
+                  ExpressionAttributeValues: {
+                    ":produtoId": { S: produtoId },
+                  },
+                  Limit: 1,
+                });
+
+                const data = await dynamoDB.send(command);
+
+                if (data.Items && data.Items.length > 0) {
+                  const item = data.Items[0];
+                  const preco = parseFloat(item.preco?.N || 0);
+                  const imagensFlat = item.imagens
+                    ? JSON.parse(item.imagens.S)
+                    : [];
+                  const primeiraImagem =
+                    imagensFlat.length > 0 ? imagensFlat[0] : "";
+
+                  return {
+                    id: item.id.S,
+                    name: item.nome?.S || "Sem nome",
+                    price: preco,
+                    installments:
+                      item.parcelamento?.S ||
+                      `ou ${Math.ceil(preco / 100)}x de R$ ${(
+                        preco / Math.ceil(preco / 100)
+                      ).toFixed(2)}`,
+                    discount: item.desconto?.S || "-0% OFF",
+                    image: primeiraImagem || "",
+                    precoProdutoText: `R$ ${preco.toFixed(2)} à vista`,
+                  };
+                }
+                return null;
+              } catch (error) {
+                console.error(`Erro ao buscar produto ${produtoId}:`, error);
+                return null;
+              }
+            })
+          );
+
+          // Filtrar produtos nulos e definir estado
+          const produtosValidos = produtosDetalhados.filter((p) => p !== null);
+          setLastAccessedProducts(produtosValidos);
+          console.log(
+            `${produtosValidos.length} produtos carregados com sucesso`
+          );
+        } else {
+          console.log("Nenhum produto acessado anteriormente");
+          setLastAccessedProducts([]);
+        }
+
+        setLoadingLastAccessed(false);
+      } catch (error) {
+        console.error("Erro ao carregar últimos produtos acessados:", error);
+        setLastAccessedProducts([]);
+        setLoadingLastAccessed(false);
+      }
+    };
+
+    fetchLastAccessedProducts();
+
+    // Recarregar quando a tela entrar em foco
+    const unsubscribe = navigation.addListener(
+      "focus",
+      fetchLastAccessedProducts
+    );
+    return unsubscribe;
+  }, [navigation]);
+
+  // --- NOVA FUNCIONALIDADE: Salvar produto acessado ---
+  const handleProductPress = async (product) => {
+    try {
+      // Salvar no histórico de produtos acessados
+      const lastAccessedJSON = await AsyncStorage.getItem(
+        "lastAccessedProducts"
+      );
+      let lastAccessedIds = lastAccessedJSON
+        ? JSON.parse(lastAccessedJSON)
+        : [];
+
+      // Remover o produto se já existir (para movê-lo para o início)
+      lastAccessedIds = lastAccessedIds.filter((id) => id !== product.id);
+
+      // Adicionar no início
+      lastAccessedIds.unshift(product.id);
+
+      // Limitar a 10 produtos
+      lastAccessedIds = lastAccessedIds.slice(0, 10);
+
+      // Salvar de volta
+      await AsyncStorage.setItem(
+        "lastAccessedProducts",
+        JSON.stringify(lastAccessedIds)
+      );
+      console.log("Produto salvo no histórico:", product.name);
+
+      // Navegar para a tela de detalhes (você precisa ter essa tela configurada)
+      navigation.navigate("DetalheProduto", { productId: product.id });
+    } catch (error) {
+      console.error("Erro ao salvar produto no histórico:", error);
+    }
+  };
 
   // --- Carrossel de Banners (auto-scroll) ---
   useEffect(() => {
@@ -213,12 +332,10 @@ export default function HomeScreen({ navigation }) {
     }
   }, [banners]);
 
-
   const handleAddToCart = async (product) => {
     try {
       console.log("=== INICIANDO ADIÇÃO AO CARRINHO ===");
 
-      // ----- 1. Buscar usuário logado de forma segura -----
       const usuarioRaw = await AsyncStorage.getItem("usuarioLogado");
 
       console.log(
@@ -245,7 +362,6 @@ export default function HomeScreen({ navigation }) {
         return;
       }
 
-      // ----- 2. Parse do usuário -----
       const usuarioObj = JSON.parse(usuarioRaw);
       const usuarioId = String(usuarioObj.id);
 
@@ -253,18 +369,16 @@ export default function HomeScreen({ navigation }) {
       console.log("ID do usuário:", usuarioId);
       console.log("Produto a adicionar:", product.name);
 
-      // ----- 3. GERAR ID ÚNICO COM TIMESTAMP (SEMPRE NOVO) -----
       const timestamp = Date.now();
       const carrinhoItemId = `${usuarioId}_${product.id}_${timestamp}`;
 
       console.log("🆔 ID único gerado:", carrinhoItemId);
 
-      // ----- 4. Salvar no DynamoDB PRIMEIRO (fonte da verdade) -----
       try {
         const precoFormatado = parseFloat(product.price || 0).toFixed(1);
 
         const carrinhoItem = {
-          id: { S: String(carrinhoItemId) }, // ✅ ID único com timestamp
+          id: { S: String(carrinhoItemId) },
           usuarioId: { S: String(usuarioId) },
           produtoId: { S: String(product.id) },
           nomeProduto: { S: String(product.name || "Produto sem nome") },
@@ -282,7 +396,6 @@ export default function HomeScreen({ navigation }) {
         await dynamoDB.send(putCommand);
         console.log("✅ Produto salvo no DynamoDB com sucesso");
 
-        // ----- 5. Sucesso -----
         Alert.alert("Sucesso", "Produto adicionado ao carrinho!", [
           {
             text: "OK",
@@ -301,19 +414,6 @@ export default function HomeScreen({ navigation }) {
       Alert.alert("Erro", "Não foi possível adicionar o produto ao carrinho.");
     }
   };
-
-  useEffect(() => {
-    const debug = async () => {
-      console.log("===== DEBUG ASYNCSTORAGE =====");
-      const keys = await AsyncStorage.getAllKeys();
-      console.log("Todas as chaves:", keys);
-
-      const usuario = await AsyncStorage.getItem("usuarioLogado");
-      console.log("usuarioLogado bruto:", usuario);
-    };
-
-    debug();
-  }, []);
 
   if (!fontsLoaded) {
     return null;
@@ -473,6 +573,7 @@ export default function HomeScreen({ navigation }) {
                 key={product.id}
                 product={product}
                 onAddToCart={handleAddToCart}
+                onProductPress={handleProductPress}
               />
             ))}
           </ScrollView>
@@ -491,26 +592,37 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       {/* Carrossel de Últimos Acessos */}
-      <View style={styles.containerCarrossel}>
-        <ScrollView
-          ref={acessosScrollRef}
-          horizontal={true}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContainer}
-        >
-          {lastAccessedProducts.length > 0 ? (
-            lastAccessedProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-              />
-            ))
-          ) : (
-            <Text style={styles.fontKantumruy}>Nenhum produto acessado</Text>
-          )}
-        </ScrollView>
-      </View>
+      {loadingLastAccessed ? (
+        <View style={[styles.containerCarrossel, { justifyContent: "center" }]}>
+          <ActivityIndicator size="large" color="#052242" />
+        </View>
+      ) : (
+        <View style={styles.containerCarrossel}>
+          <ScrollView
+            ref={acessosScrollRef}
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContainer}
+          >
+            {lastAccessedProducts.length > 0 ? (
+              lastAccessedProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  onProductPress={handleProductPress}
+                />
+              ))
+            ) : (
+              <View style={{ padding: 20 }}>
+                <Text style={styles.fontKantumruy}>
+                  Nenhum produto acessado ainda
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      )}
     </ScrollView>
   );
 }

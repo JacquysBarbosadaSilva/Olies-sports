@@ -62,6 +62,38 @@ export default function Produtos() {
 
   const navigation = useNavigation();
 
+  const deleteOldAcessos = async (usuarioId) => {
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+    const oldDateStr = tenDaysAgo.toISOString();
+    try {
+      // Scan para encontrar acessos antigos do usuário
+      const params = {
+        TableName: "ultimos_acessos",
+        FilterExpression: "usuarioId = :uid AND dataAcesso < :oldDate",
+        ExpressionAttributeValues: {
+          ":uid": { S: usuarioId },
+          ":oldDate": { S: oldDateStr },
+        },
+      };
+      const data = await dynamoDB.send(new ScanCommand(params));
+      const itemsToDelete = data.Items || [];
+      // Deletar cada item antigo
+      for (const item of itemsToDelete) {
+        const deleteParams = {
+          TableName: "ultimos_acessos",
+          Key: {
+            id: item.id, // Assumindo que 'id' é a chave primária da tabela
+          },
+        };
+        await dynamoDB.send(new DeleteItemCommand(deleteParams));
+      }
+      console.log(`${itemsToDelete.length} acessos antigos deletados.`);
+    } catch (err) {
+      console.error("Erro ao deletar acessos antigos:", err);
+    }
+  };
+
   const registrarUltimoAcesso = async (produtoId) => {
     try {
       const usuarioId = await AsyncStorage.getItem("usuarioId");
@@ -69,9 +101,10 @@ export default function Produtos() {
         console.log("Usuário não logado, não salvará acesso.");
         return;
       }
-
+      // Primeiro, deletar acessos antigos
+      await deleteOldAcessos(usuarioId);
+      // Registrar o novo acesso
       const acessoId = Date.now().toString();
-
       const params = {
         TableName: "ultimos_acessos",
         Item: {
@@ -81,14 +114,12 @@ export default function Produtos() {
           dataAcesso: { S: new Date().toISOString() },
         },
       };
-
       await dynamoDB.send(new PutItemCommand(params));
       console.log("Acesso registrado com sucesso!");
     } catch (err) {
       console.error("Erro ao registrar acesso:", err);
     }
   };
-
   const abrirProduto = async (item) => {
     await registrarUltimoAcesso(item.id);
     navigation.navigate("InfoProduto", { produto: item });
