@@ -14,6 +14,8 @@ import { Picker } from "@react-native-picker/picker";
 import { useRoute } from "@react-navigation/native";
 import * as Clipboard from "expo-clipboard";
 import QRCode from "react-native-qrcode-svg";
+import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const produtoCategoria8Url =
   "https://olies-ports.s3.us-east-1.amazonaws.com/img/produto-categoria8.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4ZABIJU4J%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T220048Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEH4aCXVzLWVhc3QtMSJHMEUCIQDLdOlfWlDhnQa9X2AX%2FcfZhlc7zaX3PEBAgSvdcnqm9gIgTRas7lelKw3W%2FsyqkQTCuXJPodviC1v3o5KR5qN%2FQm8qgwMINxAAGgw2NzEwNTQ0OTczMzciDOgewKMYZkLt0PmQ0SrgAr%2FdkRkNXDWlJc43G7u%2FrKgyc068Iya8egWK7ZPXCoSOXtGv%2FzPoNZcchf36trcMmijmBmwx8s2m6nlIzs0mYw07Wse%2B1ckU6HPRy%2BOi4VrDRww4RExUFdFO1QfTHs0MCX8BIKxsi%2BtlKbRP2u8sftnGsSrqo2T5toblGfYuDwrHWVvjiM9WA8U4vu%2FagdyfKm6VEq3NuIXpR9EZk4xvYaeXSgMbiR5vZ2hEuCJkg%2FrkgaAqSkcRDf0QL4CdotpRRv%2BAv%2BV8IojNkz65XgyA3lxXzrHaiFjOZU7dA6voSK9clDtBUh%2Bs%2FbE63jYiKKtx7j6qbLpCHI5B6sXSoqh8%2FlhceIF0su%2Bf5ChFAl5wl2zBoZ%2FAKtwpFY3je%2BNxsiO4qLdO9XLeuNSMPnMA5aPdJfctNhJ6Ppc1WHF5SH3s4vgybq8Nm%2Fvst4Zf%2F07co8VuIz%2FDgU6Mwb45QaDszd6PM0owgNzkxwY6hwLH522OlUh5V5KdRkx0Nw46kQWu2H7CyyYCZCeeWYSD0N4bGNqae%2By9vwyE3WKMy1yo54Xo07Iveb5Ox1xR1HDiPPOidafWsXMLUD3RtW%2F70SIrQghpm5v%2BaNYrpt7ztwsXL%2B%2FxmWrVBKbPOf8NOkngAmoTtkxuBcWsmu2%2B%2B%2FSDEQMTIWoF3PG2jY%2F9sqOuJEzsQfsqVeoHcDRBLxR1OG%2BylQXxgMikc4Evdjj3tLHZ%2FIe%2BdoMDDZYLOqoxOxfHaUEwHXKGtsjhoTp3A2gVbaRknQy4licY1uEXJICtp6RX1VAB6r%2F6A%2BesY8VzCi7yo2p5EPDwmpsr6EGegiTMpxP1ey9tYi2CQ%3D%3D&X-Amz-Signature=010973e59019be94250baef00640efd7f27a0ca8f90ba9f402f0713d7eb634ea&X-Amz-SignedHeaders=host&response-content-disposition=inline";
@@ -32,19 +34,22 @@ export default function PagamentoScreen() {
   const chavePix =
     "00020126580014BR.GOV.BCB.PIX0136612345678905204000053039865406100.005802BR5925OLIES SPORTS LTDA6009SAO PAULO62140510ABCD12345678";
   // Função básica para validar e processar pagamento com cartão
-  const handlePagamentoCartao = () => {
-    if (!cartaoNumero || !nomeTitular || !mes || !ano || !cvv || !parcelas) {
-      Alert.alert("Erro", "Por favor, preencha todos os campos obrigatórios.");
-      return;
-    }
-    // Aqui você pode adicionar lógica para processar o pagamento (ex: chamar API)
-    Alert.alert("Sucesso", "Pagamento com cartão processado com sucesso!");
-  };
+  const handlePagamentoCartao = async () => {
+  if (!cartaoNumero || !nomeTitular || !mes || !ano || !cvv || !parcelas) {
+    Alert.alert("Erro", "Por favor, preencha todos os campos obrigatórios.");
+    return;
+  }
+
+  Alert.alert("Sucesso", "Pagamento com cartão processado com sucesso!");
+
+  await salvarPedido("Cartão");
+};
 
   // Função básica para processar pagamento com PIX
-  const handlePagamentoPix = () => {
-    setShowPixModal(true);
-  };
+const handlePagamentoPix = async () => {
+  setShowPixModal(true);
+  await salvarPedido("Pix");
+};
 
   console.log("Itens recebidos no pagamento:", cartItems);
   const copiarChavePix = () => {
@@ -52,7 +57,32 @@ export default function PagamentoScreen() {
     Alert.alert("Copiado!", "A chave PIX foi copiada.");
   };
 
+  const salvarPedido = async (tipoPagamento) => {
+  try {
+    const novoPedido = {
+      id: Date.now(), // ID único
+      itens: cartItems,
+      data: new Date().toLocaleString("pt-BR"),
+      tipoPagamento: tipoPagamento,
+    };
+
+    // Busca pedidos já existentes
+    const pedidosSalvos = JSON.parse(await AsyncStorage.getItem("pedidos")) || [];
+
+    // Adiciona o novo pedido
+    pedidosSalvos.push(novoPedido);
+
+    // Salva novamente
+    await AsyncStorage.setItem("pedidos", JSON.stringify(pedidosSalvos));
+    
+  } catch (error) {
+    console.log(error);
+  }
+};
+
   return (
+    <SafeAreaView showsHorizontalScrollIndicator={false}
+ style={{ flex: 1, backgroundColor: "#F3ECE2" }}>
     <ScrollView style={styles.container}>
       <Modal visible={showPixModal} transparent animationType="fade">
         <View style={styles.modalBackground}>
@@ -221,6 +251,7 @@ export default function PagamentoScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

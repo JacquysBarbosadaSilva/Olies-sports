@@ -448,7 +448,7 @@ export default function HomeScreen({ navigation }) {
         </View>
       ) : banners.length > 0 ? (
         <TouchableOpacity
-          onPress={() => navigation.navigate("ListaDesejos")}
+
           style={styles.bannerContainer}
         >
           <Image
@@ -478,7 +478,7 @@ export default function HomeScreen({ navigation }) {
 
       {/* Categorias */}
       <View style={styles.categoriesContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
+        <TouchableOpacity onPress={() => navigation.navigate("Produtos")}>
           <View style={styles.categoryButton}>
             <View style={styles.categoryCircle}>
               <Image
@@ -491,7 +491,7 @@ export default function HomeScreen({ navigation }) {
             </Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
+        <TouchableOpacity onPress={() => navigation.navigate("Produtos")}>
           <View style={styles.categoryButton}>
             <View style={styles.categoryCircle}>
               <Image
@@ -504,18 +504,20 @@ export default function HomeScreen({ navigation }) {
             </Text>
           </View>
         </TouchableOpacity>
-        <View style={styles.categoryButton}>
-          <View style={styles.categoryCircle}>
-            <Image
-              source={require("../assets/acessorios.jpg")}
-              style={styles.categoryIcon}
-            />
+        <TouchableOpacity onPress={() => navigation.navigate("Produtos")}>
+          <View style={styles.categoryButton}>
+            <View style={styles.categoryCircle}>
+              <Image
+                source={require("../assets/acessorios.jpg")}
+                style={styles.categoryIcon}
+              />
+            </View>
+            <Text style={[styles.categoryText, styles.fontKantumruy]}>
+              Acessórios
+            </Text>
           </View>
-          <Text style={[styles.categoryText, styles.fontKantumruy]}>
-            Acessórios
-          </Text>
-        </View>
-        <TouchableOpacity onPress={() => navigation.navigate("Categorias")}>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("Produtos")}>
           <View style={styles.categoryButton}>
             <View style={styles.categoryCircle}>
               <Image
@@ -585,13 +587,12 @@ export default function HomeScreen({ navigation }) {
       )}
 
       {/* Cabeçalho Últimos Acessos */}
-      <View style={styles.contUltimosAcessos}>
+      {/* <View style={styles.contUltimosAcessos}>
         <Text style={[styles.ultimosAcessosText, styles.fontKantumruyMedium]}>
           Últimos produtos acessados
         </Text>
       </View>
 
-      {/* Carrossel de Últimos Acessos */}
       {loadingLastAccessed ? (
         <View style={[styles.containerCarrossel, { justifyContent: "center" }]}>
           <ActivityIndicator size="large" color="#052242" />
@@ -622,7 +623,7 @@ export default function HomeScreen({ navigation }) {
             )}
           </ScrollView>
         </View>
-      )}
+      )} */}
     </ScrollView>
   );
 }
@@ -810,7 +811,7 @@ const styles = StyleSheet.create({
   },
   textBotao: {
     color: "#052242",
-    fontSize: 10,
+    fontSize: 8,
   },
   containerCarrossel: {
     width: "100%",

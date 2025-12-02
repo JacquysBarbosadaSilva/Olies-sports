@@ -1,239 +1,153 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
-  Modal,
-  TextInput,
-  Animated,
-  Image,
   StyleSheet,
+  Image
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
-const produtos = [
-  {
-    id: '1',
-    nome: 'Nike Tiempo Legend 9 Club IC',
-    preco: 199.99,
-    desconto: '13% OFF',
-    categoria: 'Tênis',
-    imagem: require('./assets/nike_tiempo.png'),
-  },
-  {
-    id: '2',
-    nome: 'Puma TRC Blaze Court',
-    preco: 199.99,
-    desconto: '13% OFF',
-    categoria: 'Tênis',
-    imagem: require('./assets/puma_trc.png'),
-  },
-  {
-    id: '3',
-    nome: 'Nike Court Vision Low Next Nature',
-    preco: 299.99,
-    desconto: '5% OFF',
-    categoria: 'Tênis',
-    imagem: require('./assets/nike_court.png'),
-  },
-  {
-    id: '4',
-    nome: 'Adidas Calça Essentials 3S',
-    preco: 179.99,
-    desconto: '35% OFF',
-    categoria: 'Calça',
-    imagem: require('./assets/adidas_calca.png'),
-  },
-  // Adicione os outros produtos aqui...
-];
+const logo = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?..."; 
 
-export default function ProdutosScreen() {
-  const [filtroAberto, setFiltroAberto] = useState(false);
-  const [filtroSelecionado, setFiltroSelecionado] = useState('Todos');
-  const [precoMin, setPrecoMin] = useState('');
-  const [precoMax, setPrecoMax] = useState('');
+export default function VerPedidosScreen({navigation}) {
+  const [pedidos, setPedidos] = useState([]);
 
-  const filtrarProdutos = () => {
-    return produtos.filter((item) => {
-      const emPromocao = filtroSelecionado === 'Promocao' ? !!item.desconto : true;
-      const dentroFaixa =
-        (!precoMin || item.preco >= parseFloat(precoMin)) &&
-        (!precoMax || item.preco <= parseFloat(precoMax));
-      return emPromocao && dentroFaixa;
-    });
+  useEffect(() => {
+    carregarPedidos();
+  }, []);
+
+  const carregarPedidos = async () => {
+    try {
+      const data = await AsyncStorage.getItem("pedidos");
+      if (data) {
+        setPedidos(JSON.parse(data));
+      } else {
+        setPedidos([]);
+      }
+    } catch (error) {
+      console.log("Erro ao carregar pedidos:", error);
+    }
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.card}>
-      <Image source={item.imagem} style={styles.imagem} resizeMode="contain" />
-      <View style={styles.info}>
-        <Text style={styles.preco}>R$ {item.preco.toFixed(2)}</Text>
-        {item.desconto ? <Text style={styles.desconto}>{item.desconto}</Text> : null}
-        <Text style={styles.nome}>{item.nome}</Text>
-        <Text style={styles.categoria}>{item.categoria}</Text>
-      </View>
-    </TouchableOpacity>
+    <View style={styles.card}>
+
+      <Text style={styles.titulo2}>Pedido #{item.id}</Text>
+      <Text style={styles.info}>Data: {item.data}</Text>
+      <Text style={styles.info}>Pagamento: {item.tipoPagamento}</Text>
+
+      <Text style={styles.subtitulo}>Itens:</Text>
+
+      {item.itens.map((produto, index) => (
+        <View key={index} style={styles.itemLinha}>
+          <Text style={styles.itemTexto}>
+            {produto.name}
+          </Text>
+          <Text style={styles.quantidade}>Qtd: {produto.quantity}</Text>
+        </View>
+      ))}
+
+    </View>
   );
 
   return (
-    <View style={styles.container}>
-      {/* Header com botão de filtro */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setFiltroAberto(true)} style={styles.filtroBotao}>
-          <Ionicons name="filter-outline" size={22} color="#000" />
+    <SafeAreaView showsHorizontalScrollIndicator={false}
+     style={{ flex: 1, backgroundColor: "#F3ECE2" }}>
+
+      <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#001f3f" />
         </TouchableOpacity>
+
+
+        <Text style={styles.titulo}>Meus pedidos</Text>
+        <Image source={{ uri: logo }} style={styles.logo} />
       </View>
 
-      <FlatList
-        data={filtrarProdutos()}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.lista}
-        columnWrapperStyle={styles.coluna}
-      />
+        <View style={styles.shadowLine}></View>
 
-      {/* Modal de filtro */}
-      <Modal visible={filtroAberto} transparent animationType="slide">
-        <TouchableOpacity
-          style={styles.overlay}
-          onPress={() => setFiltroAberto(false)}
-          activeOpacity={1}
-        >
-          <Animated.View style={styles.filtroContainer}>
-            <Text style={styles.filtroTitulo}>Filtrar por:</Text>
-
-            <TouchableOpacity
-              style={[styles.opcao, filtroSelecionado === 'Todos' && styles.opcaoAtiva]}
-              onPress={() => setFiltroSelecionado('Todos')}
-            >
-              <Text style={styles.textoOpcao}>Todos</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.opcao, filtroSelecionado === 'Promocao' && styles.opcaoAtiva]}
-              onPress={() => setFiltroSelecionado('Promocao')}
-            >
-              <Text style={styles.textoOpcao}>Em promoção</Text>
-            </TouchableOpacity>
-
-            <View style={{ marginTop: 20 }}>
-              <Text style={styles.filtroSubtitulo}>Preço mínimo:</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                placeholder="Ex: 100"
-                value={precoMin}
-                onChangeText={setPrecoMin}
-              />
-              <Text style={styles.filtroSubtitulo}>Preço máximo:</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                placeholder="Ex: 1000"
-                value={precoMax}
-                onChangeText={setPrecoMax}
-              />
-            </View>
-          </Animated.View>
-        </TouchableOpacity>
-      </Modal>
+    <View style={styles.container}>
+      {pedidos.length === 0 ? (
+        <View style={styles.semPedidos}>
+          <Text style={styles.semPedidosTexto}>Você ainda não tem pedidos.</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={pedidos}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
+        />
+      )}
     </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: {
-    padding: 16,
-    alignItems: 'flex-end',
+    headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: 92,
+    paddingHorizontal: 20,
   },
-  filtroBotao: {
-    backgroundColor: '#eee',
-    padding: 8,
-    borderRadius: 8,
+  shadowLine: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+    borderBottomWidth: 0.8,
+    marginBottom: 20,
+    borderBottomColor: "#00000025",
   },
-  lista: {
-    paddingHorizontal: 8,
-    paddingBottom: 16,
+  titulo: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#052242",
+    marginLeft: -60,
   },
-  coluna: {
-    justifyContent: 'space-between',
+    titulo2: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#052242",
   },
+    logo: { width: 77, height: 40, marginLeft: 10 },
+  container: { flex: 1, backgroundColor: '#F3ECE2', padding: 20 },
+  header: { fontSize: 26, fontWeight: 'bold', marginBottom: 20 },
   card: {
-    backgroundColor: '#f9f9f9',
-    margin: 8,
-    borderRadius: 8,
-    flex: 1,
-    padding: 10,
-    alignItems: 'center',
+    backgroundColor: "#f9f9f9",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 14,
+    elevation: 2,
   },
-  imagem: {
-    width: 100,
-    height: 100,
-    marginBottom: 10,
-  },
-  info: {
-    alignItems: 'center',
-  },
-  preco: {
+  info: { fontSize: 14, color: "#555" },
+  subtitulo: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    marginTop: 12,
+    fontWeight: "bold",
   },
-  desconto: {
-    fontSize: 14,
-    color: '#d00',
-    marginBottom: 4,
+  itemLinha: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 2,
   },
-  nome: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 2,
-  },
-  categoria: {
-    fontSize: 12,
-    color: '#666',
-  },
-  overlay: {
+  itemTexto: { fontSize: 14 },
+  quantidade: { fontSize: 14, color: "#444" },
+  semPedidos: {
     flex: 1,
-    backgroundColor: '#000000aa',
-    justifyContent: 'flex-end',
+    justifyContent: "center",
+    alignItems: "center",
   },
-  filtroContainer: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  filtroTitulo: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  filtroSubtitulo: {
-    fontSize: 14,
-    marginTop: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    marginTop: 4,
-    borderRadius: 8,
-  },
-  opcao: {
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: '#eee',
-    marginVertical: 4,
-  },
-  opcaoAtiva: {
-    backgroundColor: '#cce5ff',
-  },
-  textoOpcao: {
-    fontSize: 14,
+  semPedidosTexto: {
+    fontSize: 16,
+    color: "#777",
   },
 });

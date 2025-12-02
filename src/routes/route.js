@@ -25,6 +25,7 @@ import Login from "../screens/Login";
 import Cadastro from "../screens/Cadastro";
 import RedefinirSenha from "../screens/RedefinirSenha";
 import ListaDesejos from "../screens/ListaDesejos";
+import VerPedidos from "../screens/VizuPedidos";
 
 const logo =
   "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZYPPXAY4734NIBZV%2F20251022%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251022T235611Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEID%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIGvmmEbnoo8A5Fdf8W2j18XJW5qtr3gOl6OBDNDfiwpWAiEAwC%2BzlALsTuK3suf8HIFQMeLVuRQ5RktuUvqmb5DYzOYqgwMIORAAGgw2NzEwNTQ0OTczMzciDD4fTZLRXeWJOM%2FkqSrgAoN1eRCYZ77Yng%2BFeCSKuuMSSrydPsdD6njlM0bRekayD4NA4U9tVPhK4oILw%2BIcF7JisLgQWEVNgO99q2j4XmG9wr7Hb%2BS44bDY95g6vVp8%2BYrtcEW64TFeeMAGLRvZS7o86JODie5Ny44hjLc6BwQipHrNthk8acbmXXbcJhAMSeyESGVO3kPXoRVm%2BD%2F2PpQStUZ%2B3NtoqzhpB2QodSFvDFPf04jX%2FNglb71k0Tm4ONuI4MMPER5VIM0T8rLWvXu45TP57adERC5s6mrNdLZS17stW6jL871ztuR0RKKlFXb1bYidZn6UD93CjESnTWFhOZ5CO9b3RXmvd0gA458byssMpWkLv6VTpiihTNqBPsH5Pa7bjNAazLxh10XL8zJaBpEpsb%2Btz68U4WoLva9VIsXrAMjOpxtKT%2FXiTJTt57%2BAMm5ZZfz%2FZuOoQkq2DqdzB3OCoZdUaH3twl95oA0wztzlxwY6hwKAY%2Bh%2FeqjRDrz%2FV9WrYRZ7M6wxVtxV6OcMYiREbFWxNASvDMH5G%2BHSKn%2FpOS3rLsf41BNaEb%2B%2Ft%2Bhs3wPo3JM%2FhwpFB4iqqtk19DxYd0QV5yF90%2Fsbtmf%2BuvL8U562tjiIi3ksIl%2BYPdnQWHe2Dn0SLtiGwZKz9koREiBi0fH%2BTidrBx5ODF49xQjkv%2Fu1tSueUCwJpZnHPP6QZO2N1Nld9ryupVyE0jMzwUMNyRqHTv5%2BI8R17rddobFkjLsQWTdU9UByaHQKVCcUgKand5sBpWa9ZbCPVxG65VKaS2RngWz%2FJLl%2FyKRDgwSnDO5kBw8moUe5GDC1vxFWFceyL8lJoJHFnu6SvQ%3D%3D&X-Amz-Signature=c99b628c851bdc3a16c6821edb1ef5bca6c456f85c6e57f8060a30b8f1f4740f&X-Amz-SignedHeaders=host&response-content-disposition=inline";
@@ -83,18 +84,10 @@ function AppNavigation() {
           <Stack.Screen
             name="Produtos"
             component={Produtos}
-            options={({ navigation }) => ({
-              headerShown: true,
+            options={{
+              headerShown: false,
               title: "Produtos",
-              headerLeft: () => (
-                <Ionicons
-                  name="arrow-back"
-                  size={24}
-                  style={{ marginLeft: 15 }}
-                  onPress={() => navigation.goBack()}
-                />
-              ),
-            })}
+            }}
           />
           <Stack.Screen
             name="Pagamento"
@@ -153,13 +146,46 @@ function AppNavigation() {
             options={({ navigation }) => ({
               headerShown: true,
               title: "",
+              headerStyle: {
+                backgroundColor: "#F3ECE2",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 3,
+                elevation: 4,
+              },
               headerLeft: () => (
-                <Ionicons
-                  name="arrow-back"
-                  size={24}
-                  color="#052242"
-                  style={{ marginLeft: 15 }}
+                <TouchableOpacity
                   onPress={() => navigation.goBack()}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginLeft: 15,
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="arrow-back" size={24} color="#052242" />
+                  <Text
+                    style={{
+                      color: "#052242",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                      marginLeft: 5,
+                    }}
+                  >
+                    Informações do Produto
+                  </Text>
+                </TouchableOpacity>
+              ),
+              headerRight: () => (
+                <Image
+                  source={{ uri: logo }}
+                  style={{
+                    width: 75,
+                    height: 75,
+                    marginRight: 15,
+                  }}
+                  resizeMode="contain"
                 />
               ),
             })}
@@ -178,11 +204,11 @@ function AppNavigation() {
               },
               headerLeft: () => (
                 <Ionicons
-                  name="arrow-back"
-                  size={24}
-                  color="#052242"
-                  style={{ marginLeft: 15 }}
-                  onPress={() => navigation.goBack()}
+                name="arrow-back"
+                size={24}
+                color="#052242"
+                style={{ marginLeft: 15 }}
+                onPress={() => navigation.goBack()}
                 />
               ),
               headerTitle: () => (
@@ -211,7 +237,7 @@ function AppNavigation() {
               ),
               headerRight: () => (
                 <TouchableOpacity
-                  onPress={() => console.log("Adicionar aos favoritos")}
+                onPress={() => console.log("Adicionar aos favoritos")}
                 >
                   <Ionicons
                     name="heart-outline"
@@ -237,11 +263,11 @@ function AppNavigation() {
               },
               headerLeft: () => (
                 <Ionicons
-                  name="close"
-                  size={24}
-                  color="#052242"
-                  style={{ marginLeft: 15 }}
-                  onPress={() => navigation.goBack()}
+                name="close"
+                size={24}
+                color="#052242"
+                style={{ marginLeft: 15 }}
+                onPress={() => navigation.goBack()}
                 />
               ),
               headerTitle: () => (
@@ -265,7 +291,7 @@ function AppNavigation() {
                   </View>
                 </View>
               ),
-
+              
               headerRight: () => <View style={{ marginRight: 15 }} />,
             })}
           />
@@ -275,6 +301,14 @@ function AppNavigation() {
             options={{
               headerShown: false,
               title: "Endereços",
+            }}
+          />
+          <Stack.Screen
+            name="Pedidos"
+            component={VerPedidos}
+            options={{
+              headerShown: false,
+              title: "Pedidos",
             }}
           />
 

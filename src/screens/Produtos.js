@@ -24,6 +24,11 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { v4 as uuid } from "uuid";
 import * as AWS from "../../awsConfig";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+const logo = "https://olies-ports.s3.us-east-1.amazonaws.com/img/logotipo.png?..."; 
+import { Ionicons } from "@expo/vector-icons";
+
 
 const dynamoDB = AWS.dynamoDB;
 const s3 = AWS.s3;
@@ -460,159 +465,154 @@ export default function Produtos() {
   };
 
   const ProductCard = ({ produto }) => {
-    const scrollRef = useRef(null);
-    const indexRef = useRef(0);
-    const intervalRef = useRef(null);
+  const scrollRef = useRef(null);
+  const indexRef = useRef(0);
+  const intervalRef = useRef(null);
 
-    const imagens =
-      produto.imagensFlat && produto.imagensFlat.length
-        ? produto.imagensFlat
-        : [];
+  const imagens = produto.imagensFlat?.length ? produto.imagensFlat : [];
 
-    useEffect(() => {
-      if (!imagens.length) return;
+  useEffect(() => {
+    if (!imagens.length) return;
 
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      intervalRef.current = setInterval(() => {
-        indexRef.current = (indexRef.current + 1) % imagens.length;
-        if (scrollRef.current) {
-          scrollRef.current.scrollTo({
-            x: indexRef.current * (SCREEN_WIDTH * 0.44),
-            animated: true,
-          });
-        }
-      }, 2500);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      indexRef.current = (indexRef.current + 1) % imagens.length;
+      scrollRef.current?.scrollTo({
+        x: indexRef.current * (SCREEN_WIDTH * 0.44),
+        animated: true,
+      });
+    }, 2500);
 
-      return () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-      };
-    }, [produto]);
-
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardImageWrap}>
-          <ScrollView
-            ref={scrollRef}
-            horizontal
-            pagingEnabled={false}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ alignItems: "center" }}
-          >
-            {imagens.length ? (
-              imagens.map((url, i) => (
-                <Image
-                  key={i}
-                  source={{ uri: url }}
-                  style={styles.cardImage}
-                  resizeMode="cover"
-                />
-              ))
-            ) : (
-              <View
-                style={[
-                  styles.cardImage,
-                  { justifyContent: "center", alignItems: "center" },
-                ]}
-              >
-                <Text>Sem imagem</Text>
-              </View>
-            )}
-          </ScrollView>
-        </View>
-
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {produto.nome}
-          </Text>
-          <Text style={styles.cardPrice}>
-            R$ {Number(produto.preco).toFixed(2)}
-          </Text>
-          {!!produto.descricao && (
-            <Text style={styles.cardDesc} numberOfLines={2}>
-              {produto.descricao}
-            </Text>
-          )}
-        </View>
-      </View>
-    );
-  };
+    return () => clearInterval(intervalRef.current);
+  }, [produto]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f6f3ee" }}>
-      <View style={{ padding: 12 }}>
-        {produtos.length === 0 ? (
-          <Text style={{ color: "#666", marginBottom: 8 }}>
-            Nenhum produto ainda. Clique em + para adicionar.
-          </Text>
-        ) : (
-          <FlatList
-            key={"2columns"}
-            data={produtos}
-            numColumns={2}
-            keyExtractor={(item) => item.id}
-            columnWrapperStyle={{
-              justifyContent: "space-between",
-              marginBottom: 12,
-            }}
-            contentContainerStyle={{ paddingBottom: 120 }}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => abrirProduto(item)}>
-                <ProductCard produto={item} />
-              </TouchableOpacity>
-            )}
-          />
-        )}
+    <SafeAreaView showsHorizontalScrollIndicator={false}
+      style={{ flex: 1, backgroundColor: "#F3ECE2" }}>
+    <View style={styles.card}>
+      <View style={styles.cardImageWrap}>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        >
+          {imagens.length ? (
+            imagens.map((url, i) => (
+              <Image
+                key={i}
+                source={{ uri: url }}
+                style={styles.cardImage}
+                resizeMode="cover"
+              />
+            ))
+          ) : (
+            <View style={[styles.cardImage, { justifyContent: "center", alignItems: "center" }]}>
+              <Text>Sem imagem</Text>
+            </View>
+          )}
+        </ScrollView>
       </View>
 
-      {userTipo === "admin" && (
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => setModalVisible(true)}
-        >
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
+      <View style={styles.cardInfo}>
+        <Text style={styles.cardTitle} numberOfLines={1}>{produto.nome}</Text>
+        <Text style={styles.cardPrice}>R$ {Number(produto.preco).toFixed(2)}</Text>
+        {produto.descricao ? (
+          <Text style={styles.cardDesc} numberOfLines={2}>{produto.descricao}</Text>
+        ) : null}
+      </View>
+    </View>
+    </SafeAreaView>
+  );
+};
+
+  return (
+  <SafeAreaView style={{ flex: 1, backgroundColor: "#f6f3ee" }}>
+    <View style={styles.headerContainer}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#001f3f" />
+      </TouchableOpacity>
+
+      <Text style={styles.titulo}>Meus produtos</Text>
+      <Image source={{ uri: logo }} style={styles.logo} />
+    </View>
+
+    <View style={styles.shadowLine} />
+
+    {/* CONTEÚDO DA TELA */}
+    <View style={{ padding: 12 }}>
+      {produtos.length === 0 ? (
+        <Text style={{ color: "#666", marginBottom: 8 }}>
+          Nenhum produto ainda. Clique em + para adicionar.
+        </Text>
+      ) : (
+        <FlatList
+          key={"2columns"}
+          data={produtos}
+          numColumns={2}
+          keyExtractor={(item) => item.id}
+          columnWrapperStyle={{
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+          contentContainerStyle={{ paddingBottom: 120 }}
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => abrirProduto(item)}>
+              <ProductCard produto={item} />
+            </TouchableOpacity>
+          )}
+        />
       )}
+    </View>
 
-      {modalVisible && (
-        <View style={styles.modal}>
-          <ScrollView>
-            <Text style={styles.modalTitle}>Novo Produto</Text>
+    {userTipo === "admin" && (
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={styles.addButtonText}>+</Text>
+      </TouchableOpacity>
+    )}
 
+    {modalVisible && (
+      <View style={styles.modal}>
+        <ScrollView>
+          <Text style={styles.modalTitle}>Novo Produto</Text>
+
+          <TextInput
+            placeholder="Nome"
+            value={nome}
+            onChangeText={setNome}
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Preço"
+            value={preco}
+            onChangeText={setPreco}
+            keyboardType="numeric"
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Descrição"
+            value={descricao}
+            onChangeText={setDescricao}
+            style={[styles.input, { height: 80 }]}
+            multiline
+          />
+
+          <Text style={[styles.label, { marginTop: 12 }]}>Público-alvo</Text>
+
+          <View style={{ flexDirection: "row", gap: 8 }}>
             <TextInput
-              placeholder="Nome"
-              value={nome}
-              onChangeText={setNome}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Preço"
-              value={preco}
-              onChangeText={setPreco}
-              keyboardType="numeric"
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Descrição"
-              value={descricao}
-              onChangeText={setDescricao}
-              style={[styles.input, { height: 80 }]}
-              multiline
+              placeholder="Ex: Masculino, Feminino..."
+              value={publicoInput}
+              onChangeText={setPublicoInput}
+              style={[styles.input, { flex: 1 }]}
             />
 
-            <Text style={[styles.label, { marginTop: 12 }]}>Público-alvo</Text>
-
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <TextInput
-                placeholder="Ex: Masculino, Feminino..."
-                value={publicoInput}
-                onChangeText={setPublicoInput}
-                style={[styles.input, { flex: 1 }]}
-              />
-
-              <TouchableOpacity onPress={handleAddPublico}>
-                <Text style={styles.tipoBtnpublico}>Adicionar</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity onPress={handleAddPublico}>
+              <Text style={styles.tipoBtnpublico}>Adicionar</Text>
+            </TouchableOpacity>
+          </View>
 
             <View style={{ marginTop: 8 }}>
               {publicoAlvo.map((p, i) => (
@@ -848,11 +848,36 @@ export default function Produtos() {
           </ScrollView>
         </View>
       )}
-    </View>
+  </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: 92,
+    paddingHorizontal: 20,
+  },
+  shadowLine: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+    borderBottomWidth: 0.8,
+    marginBottom: 20,
+    borderBottomColor: "#00000025",
+  },
+  titulo: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#052242",
+    marginLeft: -60,
+  },
+  logo: { width: 77, height: 40, marginLeft: 10 },
+  
   addButton: {
     backgroundColor: "#001f3f",
     position: "absolute",
@@ -1023,7 +1048,7 @@ const styles = StyleSheet.create({
   },
   cardImageWrap: {
     height: 140,
-    backgroundColor: "#f2f2f2",
+    backgroundColor: "#F3ECE2",
   },
   cardImage: {
     width: SCREEN_WIDTH * 0.44,

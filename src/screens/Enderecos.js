@@ -509,20 +509,20 @@ return (
 
       <View style={styles.shadowLine}></View>
 
-              {/* LISTA */}
-              <Text style={styles.titulo2}>Endereços cadastrados</Text>
+      {/* LISTA */}
+      <Text style={styles.titulo2}>Endereços cadastrados</Text>
 
-{addresses.length === 0 ? (
-  <Text style={styles.vazio}>
-  Nenhum endereço cadastrado ainda
-</Text>
-) : (
-  addresses.map((address) => (
-    <View key={address.id} style={styles.lista}>
-      <AddressBox address={address} />
-    </View>
-  ))
-)}
+      {addresses.length === 0 ? (
+        <Text style={styles.vazio}>
+        Nenhum endereço cadastrado ainda
+      </Text>
+      ) : (
+        addresses.map((address) => (
+          <View key={address.id} style={styles.lista}>
+            <AddressBox address={address} />
+          </View>
+        ))
+      )}
 
       {/* INPUTS */}
       <View style={styles.profileInfo}>
@@ -627,7 +627,7 @@ container: { flex: 1, backgroundColor: "#F3ECE2"},
   profileInfo: {
     width: "90%",
     alignSelf: "center",
-    backgroundColor: "#F3ECE2",
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 20,
     elevation: 2,

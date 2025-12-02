@@ -308,12 +308,12 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
             <TouchableOpacity
               style={styles.toggleCadastroButton}
               onPress={() => setMostrarCadastro(!mostrarCadastro)}
-            >
+              >
               <Ionicons
                 name={mostrarCadastro ? "chevron-up" : "chevron-down"}
                 size={20}
                 color="#001f3f"
-              />
+                />
               <Text style={styles.toggleCadastroText}>
                 {mostrarCadastro ? "Ocultar" : "Cadastrar Novo Usuário"}
               </Text>
@@ -321,6 +321,10 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
 
             {mostrarCadastro && (
               <View style={styles.cadastroForm}>
+                <ScrollView 
+         style={{ maxHeight: 520 }} 
+         contentContainerStyle={{ paddingBottom: 30 }}
+       >
                 <Text style={styles.formTitle}>Novo Usuário</Text>
 
                 <TextInput
@@ -329,7 +333,7 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
                   value={novoNome}
                   onChangeText={setNovoNome}
                   editable={!salvandoNovoUsuario}
-                />
+                  />
 
                 <TextInput
                   style={styles.input}
@@ -339,7 +343,7 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
                   keyboardType="email-address"
                   autoCapitalize="none"
                   editable={!salvandoNovoUsuario}
-                />
+                  />
 
                 <TextInput
                   style={styles.input}
@@ -348,7 +352,7 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
                   onChangeText={setNovoTelefone}
                   keyboardType="phone-pad"
                   editable={!salvandoNovoUsuario}
-                />
+                  />
 
                 <TextInput
                   style={styles.input}
@@ -357,7 +361,7 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
                   onChangeText={setNovaSenha}
                   secureTextEntry
                   editable={!salvandoNovoUsuario}
-                />
+                  />
 
                 <Text style={styles.label}>Tipo de usuário:</Text>
                 <View style={styles.tipoContainer}>
@@ -368,13 +372,13 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
                     ]}
                     onPress={() => setNovoTipo("cliente")}
                     disabled={salvandoNovoUsuario}
-                  >
+                    >
                     <Text
                       style={[
                         styles.tipoButtonText,
                         novoTipo === "cliente" && styles.tipoButtonTextActive,
                       ]}
-                    >
+                      >
                       Cliente
                     </Text>
                   </TouchableOpacity>
@@ -392,7 +396,7 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
                         styles.tipoButtonText,
                         novoTipo === "admin" && styles.tipoButtonTextActive,
                       ]}
-                    >
+                      >
                       Admin
                     </Text>
                   </TouchableOpacity>
@@ -413,6 +417,7 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
                     <Text style={styles.buttonText}>Cadastrar Usuário</Text>
                   )}
                 </TouchableOpacity>
+                </ScrollView>
               </View>
             )}
           </View>
@@ -423,7 +428,7 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
   <TouchableOpacity
     style={styles.menuItemUp}
     onPress={() => navigation.navigate("Enderecos")}
-  >
+    >
     <View style={styles.menuLeft}>
       <Ionicons name="cube-outline" size={22} color="#0B2A52" />
       <Text style={styles.menuText}>Endereços</Text>
@@ -433,7 +438,7 @@ const [confirmarSenhaPerfil, setConfirmarSenhaPerfil] = useState("");
 
   <TouchableOpacity
     style={styles.menuItem}
-    onPress={() => navigation.navigate("VizuPedidos")}
+    onPress={() => navigation.navigate("Pedidos")}
   >
     <View style={styles.menuLeft}>
       <Ionicons name="receipt-outline" size={22} color="#0B2A52" />
@@ -509,7 +514,7 @@ container: { flex: 1, backgroundColor: "#F3ECE2", paddingTop: 40 },
   profileInfo: {
     width: "90%",
     alignSelf: "center",
-    backgroundColor: "#F3ECE2",
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 20,
     elevation: 2,
@@ -626,6 +631,8 @@ container: { flex: 1, backgroundColor: "#F3ECE2", paddingTop: 40 },
     borderRadius: 12,
     padding: 15,
     elevation: 2,
+    width: "90%",
+    alignSelf: "center",
   },
   toggleCadastroButton: {
     flexDirection: "row",
@@ -687,7 +694,7 @@ container: { flex: 1, backgroundColor: "#F3ECE2", paddingTop: 40 },
   menuContainer: {
     width: "90%",
     alignSelf: "center",
-  backgroundColor: "#F3ECE2",
+  backgroundColor: "#fff",
   borderRadius: 12,
   marginTop: 15,
   paddingVertical: 5,
